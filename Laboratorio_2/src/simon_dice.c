@@ -11,6 +11,7 @@
 void parpadear(int n);
 void delay(int ms);
 void FSM(int state);
+void encenderLed(int n);
 
 volatile int overflow_cont;
 int enable = 0;
@@ -46,7 +47,41 @@ int main(void)
   //   delay(5000); // Esperar 5s
     
   // }
+
+  // Usar para testear encenderLed, borrar luego
+  // encenderLed(0);
+  // delay(1000);
+  // encenderLed(1);
+  // delay(1000);
+  // encenderLed(2);
+  // delay(1000);
+  // encenderLed(3);
+  // delay(1000);
 }   
+
+// PORTB = 0x01; enciende 0
+// PORTB = 0x02; enciende 1
+// PORTB = 0x04; enciende 2
+// PORTB = 0x08; enciende 3
+
+void encenderLed(int n){
+   switch(n){
+    case 0:
+      PORTB = 0x01;
+      break;
+    case 1:
+      PORTB = 0x02;
+      break;
+    case 2:
+      PORTB = 0x04;
+      break;
+    case 3:
+      PORTB = 0x08;
+      break;
+    default:
+      break;
+   }
+}
 
 void parpadear(int n){
 //Recibe el número de parpadeos a realizar
