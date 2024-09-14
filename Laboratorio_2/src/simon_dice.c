@@ -25,6 +25,7 @@ int main(void)
   TCNT0 = 0x00; // Inicializar Timer0. 
   TCCR0A = 0x00; // Normal 
   TCCR0B = 0b011; //Prescaling 64
+  TIMSK = (1 << TOIE0); // Habilitar interrupción por desbordamiento de Timer0
 
   //Asignar interrupciones y puertos
   DDRB = 0x0F; // Configurar PB0, PB1, PB2 y PB3 como salidas
@@ -35,40 +36,40 @@ int main(void)
 
   sei();
 
-  while (1) {
-    parpadear(2);
-    // PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
-    // delay(5000); // Esperar 5s
-    // parpadear(3);
-    // PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
-    // delay(5000); // Esperar 5s
+  //Usar para probar parpadear, borrar en version final
+  // while (1) {
+  //   parpadear(2);
+  //   PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
+  //   delay(5000); // Esperar 5s
+  //   parpadear(3);
+  //   PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
+  //   delay(5000); // Esperar 5s
     
-  }
+  // }
 }   
 
 void parpadear(int n){
 //Recibe el número de parpadeos a realizar
     for (int i = 0; i < n; i++) {
         PORTB = 0x0F;  // Encender PB0, PB1, PB2 y PB3
-        delay(10000); // Esperar 1s
+        delay(500); // Esperar 1s
         PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
-        delay(10000); // Esperar 1s
+        delay(500); // Esperar 1s
     }
 }
 
 void delay(int ms) {
-    int overflows_necesarios = (ms * 125) / 1000; // Calcular cuántos overflows se necesitan
-
+    
     enable = 1; // Activar el contador de overflows
     overflow_cont = 0; // Reiniciar el contador
     TCNT0 = 0x00; // Reiniciar el contador del Timer0
-
-    while (overflow_cont < overflows_necesarios) {
-        TCNT0 = 0x00;
+    
+    while (enable) {
         // Nada que hacer aquí, solo esperar a que el temporizador se desborde
+        if(overflow_cont == ms){
+          enable = 0; // Desactivar el contador de overflows
+        }
     }
-
-    enable = 0; // Desactivar el contador de overflows.
 }
 
 ISR(TIMER0_OVF_vect)
