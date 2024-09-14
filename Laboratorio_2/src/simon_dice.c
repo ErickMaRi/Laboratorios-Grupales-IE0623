@@ -10,16 +10,21 @@
 
 void parpadear(int n);
 void delay(int ms);
-void FSM(int state);
+void FSM();
 void encenderLed(int n);
+void imprimirSecuencia();
+void iniciarsSecuencia();
 
 volatile int overflow_cont;
 int enable = 0;
+int secuencia[13];
+int seed = 137;
+int turno = 1;
+int estado = INICIO;
 
 int main(void)
 {
   //Variables
-  int estado = ESPERA;
   overflow_cont = 0;
   
   // Timers internos
@@ -37,6 +42,9 @@ int main(void)
 
   sei();
 
+  while(1){
+    FSM();
+  }
   //Usar para probar parpadear, borrar en version final
   // while (1) {
   //   parpadear(2);
@@ -114,33 +122,60 @@ ISR(TIMER0_OVF_vect)
   }
 }
 
-void FSM(int state){
-  switch(state){
+void imprimirSecuencia(){
+    for (int i = 0; i < 3+turno; i++) {
+        encenderLed(secuencia[i]);
+        delay(2200-200*turno);
+        PORTB = 0x00;
+        delay(200);
+    }
+    PORTB = 0x00;
+}
+
+void iniciarsSecuencia() {
+    // semilla
+    srand(seed);
+    
+    for (int i = 0; i < 13; i++) {
+        secuencia[i] = rand() % 4;  // valores de 0 to 3
+    }
+}
+
+void FSM(){
+  switch(estado){
     case ESPERA:
-      // if (button != 0){
-      //   state = INICIO;
-      //   button = 0;         
+      // if (bpresiona algun boton{
+      //   state = INICIO;       
       // }
       break;
 
     case INICIO:
       parpadear(2);
-      state = MOSTRAR;
+      estado = MOSTRAR;
+      iniciarsSecuencia();      // generar el array de la secuencia de leds a encender
       break;
 
     case MOSTRAR:
       // encender los leds segun la secuencia y el turno
-      state = REVISAR;        
+      imprimirSecuencia();
+      estado = REVISAR;
+
       break;
 
     case REVISAR:
+      // turno++;
+      // estado = MOSTRAR;
+      // if(turno == 14){
+      //   estado = INICIO;
+      // }
+      break;
       //comparar el input con la secuencia
       //si pierde state = FIN; 
-      //si lo hace bien: state = MOSTRAR; aumentar el turno
+      //si lo hace bien: state = MOSTRAR; turno++
   
     case FIN:
-      parpadear(3); // Si el usuario perdió, vamos a RESET y encendemos LEDs 3 veces. 
-      state = INICIO;
+      parpadear(3); // Parpadear LEDs 3 veces. 
+      estado = INICIO;
       break;
 
     default:
