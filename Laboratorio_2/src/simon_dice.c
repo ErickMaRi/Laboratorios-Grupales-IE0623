@@ -107,9 +107,9 @@ void parpadear(int n){
 //Recibe el número de parpadeos a realizar
     for (int i = 0; i < n; i++) {
         PORTB = 0x0F;  // Encender PB0, PB1, PB2 y PB3
-        delay(500); // Esperar 1s
+        delay(1000); // Esperar 1s
         PORTB = 0x00;  // Apagar PB0, PB1, PB2 y PB3
-        delay(500); // Esperar 1s
+        delay(1000); // Esperar 1s
     }
 }
 
@@ -156,7 +156,7 @@ ISR(PCINT2_vect) {
 void imprimirSecuencia(){
     for (int i = 0; i < 3+turno; i++) {
         encenderLed(secuencia[i]);
-        delay(2200-200*turno);
+        delay(2000 - 200 * (turno - 1)); // 2000 ms inicial, menos 200 ms por cada turno
         PORTB = 0x00;
         delay(200);
     }
