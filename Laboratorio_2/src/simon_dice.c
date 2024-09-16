@@ -9,12 +9,22 @@
 #define REVISAR 3 //Se revisa que el usuario presione los colores correctos.
 #define FIN 4 //Todos los LEDs parpadean 3 veces.
 
+#define NOTA1 392 // G4
+#define NOTA2 440 // A4
+#define NOTA3 493 // B4
+#define NOTA4 523 // C5
+
 void parpadear(int n);
 void delay(int ms);
 void FSM();
 void encenderLed(int n);
 void imprimirSecuencia();
 void iniciarsSecuencia();
+
+void tocarNota(int frecuencia);
+void tonadaInicio();
+void tonadaError();
+
 
 volatile int entrada_usuario = -1; //Contiene el botón que se presionó
 volatile int overflow_cont;
@@ -38,6 +48,7 @@ int main(void)
 
   // Configuración de puertos
   DDRB = 0x0F; // Configurar PB0, PB1, PB2 y PB3 como salidas
+  DDRB |= (1 << PB4); // Configurar PB4 como salida
   
   // Configuración de entradas con resistencias pull-up
   DDRA &= ~(1 << PA1); // PA1 como entrada
@@ -84,24 +95,29 @@ int main(void)
 // PORTB = 0x04; enciende 2
 // PORTB = 0x08; enciende 3
 
-void encenderLed(int n){
-   switch(n){
-    case 0:
-      PORTB = 0x01;
-      break;
-    case 1:
-      PORTB = 0x02;
-      break;
-    case 2:
-      PORTB = 0x04;
-      break;
-    case 3:
-      PORTB = 0x08;
-      break;
-    default:
-      break;
+void encenderLed(int n) {
+   switch(n) {
+       case 0:
+           PORTB = 0x01;
+           tocarNota(NOTA1);  // LED 0, nota 1
+           break;
+       case 1:
+           PORTB = 0x02;
+           tocarNota(NOTA2);  // LED 1, nota 2
+           break;
+       case 2:
+           PORTB = 0x04;
+           tocarNota(NOTA3);  // LED 2, nota 3
+           break;
+       case 3:
+           PORTB = 0x08;
+           tocarNota(NOTA4);  // LED 3, nota 4
+           break;
+       default:
+           break;
    }
 }
+
 
 void parpadear(int n){
 //Recibe el número de parpadeos a realizar
@@ -138,6 +154,7 @@ ISR(TIMER0_OVF_vect)
 ISR(PCINT1_vect) {
     if (!(PINA & (1 << PA1))) {  // Si se presiona PA1
         entrada_usuario = 1;     // Corresponde al LED 1
+        tocarNota(NOTA2);
     }
 }
 
@@ -145,10 +162,13 @@ ISR(PCINT1_vect) {
 ISR(PCINT2_vect) {
     if (!(PIND & (1 << PD1))) {  // Si se presiona PD1
         entrada_usuario = 0;     // Corresponde al LED 0
+        tocarNota(NOTA1);
     } else if (!(PIND & (1 << PD2))) {  // Si se presiona PD2
         entrada_usuario = 2;     // Corresponde al LED 2
+        tocarNota(NOTA3);
     } else if (!(PIND & (1 << PD3))) {  // Si se presiona PD3
         entrada_usuario = 3;     // Corresponde al LED 3
+        tocarNota(NOTA4);
     }
 }
 
@@ -172,6 +192,47 @@ void iniciarsSecuencia() {
     }
 }
 
+void delay_us(unsigned int us) {
+    // Aproximación simple para retardo
+    while (us--) {
+        for (volatile int i = 0; i < 3; i++);
+    }
+}
+
+void tocarNota(int frecuencia) {
+    unsigned long periodo = 1000000UL / frecuencia;  //Frecuencia a periodo en microsegundos
+    unsigned long medio_periodo = periodo / 2;  //Mitad del periodo para la frecuencia
+    unsigned long ciclos = (200000UL / periodo);  //200 ms de duración en ciclos del buzzer
+
+    for (unsigned long i = 0; i < ciclos; i++) {
+        PORTB |= (1 << PB4);  //Encender el buzzer
+        delay_us(medio_periodo);  //Esperar la mitad del periodo
+        PORTB &= ~(1 << PB4);  //Apagar el buzzer
+        delay_us(medio_periodo);  //Esperar la otra mitad del periodo
+    }
+}
+
+
+void tonadaInicio() {
+    tocarNota(NOTA1);  // Tocar la primera nota (ascendente)
+    _delay_ms(100);
+    tocarNota(NOTA2);
+    _delay_ms(100);
+    tocarNota(NOTA3);
+    _delay_ms(100);
+    tocarNota(NOTA4);
+}
+
+void tonadaError() {
+    tocarNota(NOTA4);  // Tocar la última nota (descendente)
+    _delay_ms(100);
+    tocarNota(NOTA3);
+    _delay_ms(100);
+    tocarNota(NOTA2);
+    _delay_ms(100);
+    tocarNota(NOTA1);
+}
+
 void FSM() {
     switch(estado) {
         case ESPERA:
@@ -181,6 +242,7 @@ void FSM() {
             break;
 
         case INICIO:
+            tonadaInicio();
             parpadear(2);
             iniciarsSecuencia();  // Generar la secuencia de LEDs
             turno = 1;  // Reiniciar el turno
@@ -214,6 +276,7 @@ void FSM() {
             break;
 
         case FIN:
+            tonadaError();
             parpadear(3);  // Parpadear LEDs 3 veces
             estado = ESPERA;  // Reiniciar el estado a ESPERA
             break;
