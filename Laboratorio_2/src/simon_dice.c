@@ -133,7 +133,7 @@ void delay(int ms) {
     // Cada overflow ocurre después de (256 * prescaler / F_CPU) segundos
     // Prescaler es 64, F_CPU es 16 MHz
     // Overflow ocurre cada 1024 us, necesitamos 1000 us * ms para ms
-     ms = 0.565156*ms;
+    ms = 0.5432103*ms;
     unsigned int overflows_required = (ms * 1000UL) / 1024;
     
     enable = 1; // Activar el contador de overflows
