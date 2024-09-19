@@ -154,7 +154,9 @@ ISR(TIMER0_OVF_vect)
 ISR(PCINT1_vect) {
     if (!(PINA & (1 << PA1))) {  // Si se presiona PA1
         entrada_usuario = 1;     // Corresponde al LED 1
+        PORTB = 0x02;
         tocarNota(NOTA2);
+        PORTB = 0x00;
     }
 }
 
@@ -162,13 +164,19 @@ ISR(PCINT1_vect) {
 ISR(PCINT2_vect) {
     if (!(PIND & (1 << PD1))) {  // Si se presiona PD1
         entrada_usuario = 0;     // Corresponde al LED 0
+        PORTB = 0x01;
         tocarNota(NOTA1);
+        PORTB = 0x00;
     } else if (!(PIND & (1 << PD2))) {  // Si se presiona PD2
         entrada_usuario = 2;     // Corresponde al LED 2
+        PORTB = 0x04;
         tocarNota(NOTA3);
+        PORTB = 0x00;
     } else if (!(PIND & (1 << PD3))) {  // Si se presiona PD3
         entrada_usuario = 3;     // Corresponde al LED 3
+        PORTB = 0x08;
         tocarNota(NOTA4);
+        PORTB = 0x00;
     }
 }
 
@@ -213,22 +221,37 @@ void tocarNota(int frecuencia) {
 }
 
 void tonadaInicio() {
-    tocarNota(NOTA1);  // Tocar la primera nota (ascendente)
+    PORTB = 0x01;
+    tocarNota(NOTA1);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x02;
     tocarNota(NOTA2);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x04;
     tocarNota(NOTA3);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x08;
     tocarNota(NOTA4);
+    PORTB = 0x00;
 }
 
 void tonadaError() {
-    tocarNota(NOTA4);  // Tocar la última nota (descendente)
+    PORTB = 0x08;
+    tocarNota(NOTA4);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x04;
     tocarNota(NOTA3);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x02;
     tocarNota(NOTA2);
+    PORTB = 0x00;
     _delay_ms(100);
+    PORTB = 0x01;
     tocarNota(NOTA1);
 }
 
