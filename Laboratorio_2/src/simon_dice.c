@@ -301,6 +301,7 @@ void FSM() {
         case FIN:
             tonadaError();
             parpadear(3);  // Parpadear LEDs 3 veces
+            entrada_usuario = -1;
             estado = ESPERA;  // Reiniciar el estado a ESPERA
             break;
 
