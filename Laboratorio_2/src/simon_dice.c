@@ -32,7 +32,7 @@ int enable = 0;
 int secuencia[13];
 int seed = 137;
 int turno = 1;
-int estado = INICIO;
+int estado = ESPERA;
 int indice_secuencia = 0;
 
 int main(void)
@@ -212,7 +212,6 @@ void tocarNota(int frecuencia) {
     }
 }
 
-
 void tonadaInicio() {
     tocarNota(NOTA1);  // Tocar la primera nota (ascendente)
     _delay_ms(100);
@@ -237,6 +236,7 @@ void FSM() {
     switch(estado) {
         case ESPERA:
             if (entrada_usuario != -1) {  // Si se presiona algún botón
+                entrada_usuario = -1;
                 estado = INICIO;
             }
             break;
