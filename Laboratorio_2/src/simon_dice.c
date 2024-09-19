@@ -130,15 +130,20 @@ void parpadear(int n){
 }
 
 void delay(int ms) {
+    // Cada overflow ocurre después de (256 * prescaler / F_CPU) segundos
+    // Prescaler es 64, F_CPU es 16 MHz
+    // Overflow ocurre cada 1024 us, necesitamos 1000 us * ms para ms
+     ms = 0.565156*ms;
+    unsigned int overflows_required = (ms * 1000UL) / 1024;
     
     enable = 1; // Activar el contador de overflows
     overflow_cont = 0; // Reiniciar el contador
     TCNT0 = 0x00; // Reiniciar el contador del Timer0
     
     while (enable) {
-        // Nada que hacer aquí, solo esperar a que el temporizador se desborde
-        if(overflow_cont == ms){
-          enable = 0; // Desactivar el contador de overflows
+        // Esperar a que se alcancen los overflows requeridos
+        if (overflow_cont >= overflows_required) {
+            enable = 0; // Desactivar el contador de overflows
         }
     }
 }
