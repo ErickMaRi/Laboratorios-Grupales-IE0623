@@ -15,7 +15,7 @@ const int USART_SWITCH_PIN = 7; // Pin para controlar la transmisión serial
 const int MODE_SWITCH_PIN = 6;  // Pin para seleccionar entre AC y DC
 
 // Pines para alarmas (LEDs)
-const int ALARM_PINS[NUM_CHANNELS] = {0, 1, 2, 3, 4};
+const int ALARM_PINS[NUM_CHANNELS] = {0, 1, 2, 3};
 
 // Pines para ADC (A0 - A3)
 const int ADC_PINS[NUM_CHANNELS] = {A0, A1, A2, A3};
