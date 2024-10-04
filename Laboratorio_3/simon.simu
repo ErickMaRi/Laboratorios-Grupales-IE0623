@@ -6,7 +6,7 @@ Circuit Id: Node-24
 
 Unique  Id: Ground-21: 
 Circuit Id: Ground-21
-<item rotation="0" circRot="4.172268292245307e-309" labelrot="0" hflip="1" valLabRot="0" Show_id="false" mainComp="false" objectName="Ground-21" vflip="1" valLabely="0" itemtype="Ground" valLabelx="0" boardPos="-1e+6,-1e+6" boardRot="-1e+6" circPos="0,0" x="-524" labelx="-16" y="-484" labely="8" id="Ground-21"/>
+<item rotation="0" circRot="4.172268292245307e-309" labelrot="0" hflip="1" valLabRot="0" Show_id="false" mainComp="false" objectName="Ground-21" vflip="1" valLabely="0" itemtype="Ground" valLabelx="0" boardPos="-1e+6,-1e+6" boardRot="-1e+6" circPos="0,0" x="-528" labelx="-16" y="-488" labely="8" id="Ground-21"/>
 
 Unique  Id: Switch-20: 
 Circuit Id: USART?
@@ -70,7 +70,7 @@ Circuit Id: Connector-23
 
 Unique  Id: Connector-25: 
 Circuit Id: Connector-25
-<item rotation="0" circRot="6.5357480076e-312" labelrot="0" hflip="1" valLabRot="0" Show_id="false" mainComp="false" objectName="Connector-25" vflip="1" enodeid="enode-23" valLabely="0" itemtype="Connector" valLabelx="0" endpinid="Ground-21-Gnd" boardPos="-1e+6,-1e+6" pointList="-548,-512,-524,-512,-524,-500" boardRot="-1e+6" circPos="0,0" x="-548" startpinid="Node-24-2" labelx="-16" y="-512" labely="-24" id="Connector-25"/>
+<item rotation="0" circRot="6.5357480076e-312" labelrot="0" hflip="1" valLabRot="0" Show_id="false" mainComp="false" objectName="Connector-25" vflip="1" enodeid="enode-23" valLabely="0" itemtype="Connector" valLabelx="0" endpinid="Ground-21-Gnd" boardPos="-1e+6,-1e+6" pointList="-548,-512,-528,-512,-528,-504" boardRot="-1e+6" circPos="0,0" x="-548" startpinid="Node-24-2" labelx="-16" y="-512" labely="-24" id="Connector-25"/>
 
 Unique  Id: Connector-26: 
 Circuit Id: Connector-26
