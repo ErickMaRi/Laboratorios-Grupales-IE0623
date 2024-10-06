@@ -47,7 +47,7 @@ float realVoltages[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0};
 bool alarms[NUM_CHANNELS] = {false, false, false, false};
 
 // Temporizador para medir voltajes AC
-const int NUM_SAMPLES = 50; // Reducido de 100 a 50 para optimizar SRAM
+const int NUM_SAMPLES = 100; // Reducido de 100 a 50 para optimizar SRAM
 float sumSquares[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0}; // Suma de cuadrados para RMS
 int sampleCount = 0;
 unsigned long sampleInterval = 10; // Intervalo entre muestras en ms
@@ -90,7 +90,7 @@ class DisplayManager {
       display.println("Voltimetro de 4 Canales");
       display.println("Inicializando...");
       display.display();                   // Muestra el texto en la pantalla
-      delay(1000);                         // Espera 2 segundos para que el usuario lea el mensaje
+      delay(1000);                         // Espera 1 segundo para que el usuario lea el mensaje
       display.clearDisplay();              // Limpia la pantalla nuevamente
       display.display();                   // Envía el cambio a la pantalla
     }
@@ -110,7 +110,7 @@ class DisplayManager {
 
       if(needsUpdate) { // Si se necesita actualizar la pantalla
         const int baseY = 0;             // Posición vertical inicial
-        const int lineHeight = 12;       // Altura de cada línea de texto (12 píxeles)
+        const int lineHeight = 8;        // Altura de cada línea de texto (7 píxeles de texto + 1 píxel de espacio)
         const int voltagesAreaHeight = NUM_CHANNELS * lineHeight;
 
         // Limpia la sección donde se muestran los voltajes
@@ -154,11 +154,13 @@ class DisplayManager {
       }
 
       if(needsUpdate) { // Si se necesita actualizar la pantalla
-        const int voltagesAreaHeight = NUM_CHANNELS * 12; // Altura de la sección de voltajes (12 píxeles por canal)
-        const int alarmY = voltagesAreaHeight + 2; // Posición vertical donde empieza la sección de alarmas
+        const int lineHeight = 8;                         // Altura de línea actualizada
+        const int voltagesAreaHeight = NUM_CHANNELS * lineHeight; // Altura de la sección de voltajes
+        const int alarmY = voltagesAreaHeight + 1;        // Posición vertical donde empieza la sección de alarmas
 
         // Limpia la sección de alarmas
-        display.fillRect(0, alarmY, 84, 16, WHITE); // 16 píxeles de altura para alarmas
+        // Aumentamos la altura a 15 píxeles para asegurar que se limpie completamente cualquier mensaje previo
+        display.fillRect(0, alarmY, 84, 15, WHITE); // 15 píxeles de altura para alarmas
         display.setTextSize(1);           // Tamaño pequeño del texto
         display.setTextColor(BLACK);       // Color del texto (negro)
         display.setCursor(0, alarmY);       // Posiciona el cursor
@@ -191,11 +193,13 @@ class DisplayManager {
 
     // Función para limpiar la sección de alarmas
     void clearAlarms() {
-      const int voltagesAreaHeight = NUM_CHANNELS * 12; // Altura de la sección de voltajes
-      const int alarmY = voltagesAreaHeight + 2; // Posición vertical donde empieza la sección de alarmas
+      const int lineHeight = 8;                         // Altura de línea actualizada
+      const int voltagesAreaHeight = NUM_CHANNELS * lineHeight; // Altura de la sección de voltajes
+      const int alarmY = voltagesAreaHeight + 1;        // Posición vertical donde empieza la sección de alarmas
 
       // Limpia la sección de alarmas
-      display.fillRect(0, alarmY, 84, 16, WHITE);
+      // Aumentamos la altura a 15 píxeles para asegurar que se limpie completamente cualquier mensaje previo
+      display.fillRect(0, alarmY, 84, 15, WHITE); // 15 píxeles de altura para alarmas
       display.setTextSize(1);           // Tamaño pequeño del texto
       display.setTextColor(BLACK);      // Color del texto (negro)
       display.setCursor(0, alarmY);      // Posiciona el cursor
