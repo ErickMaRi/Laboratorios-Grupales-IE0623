@@ -2,7 +2,7 @@ import serial
 import csv
 
 # Configurar el puerto serial
-serial_port = serial.Serial('/tmp/ttyS1', 9600)  # Ajusta según el puerto que estés usando
+serial_port = serial.Serial('/tmp/ttyS1', 9600)  # Ajustar según el puerto que se este usando
 
 # Crear o abrir el archivo CSV
 with open('voltimetro.csv', mode='w', newline='') as file:
@@ -15,7 +15,7 @@ with open('voltimetro.csv', mode='w', newline='') as file:
             data = serial_port.readline().decode('utf-8').strip()  # Decodificar y eliminar espacios en blanco
             
             # Dividir los datos en base al formato esperado (en este caso, por comas)
-            voltages = data.split(',')  # Suponiendo que los valores vienen separados por comas
+            voltages = data.split(',') 
             
             if len(voltages) == 4:  # Comprobar que hay cuatro valores
                 writer.writerow(voltages)  # Escribir los datos de voltaje en el csv
