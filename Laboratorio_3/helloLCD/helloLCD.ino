@@ -47,7 +47,7 @@ float realVoltages[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0};
 bool alarms[NUM_CHANNELS] = {false, false, false, false};
 
 // Temporizador para medir voltajes AC
-const int NUM_SAMPLES = 50; // Reducido de 100 a 50 para optimizar SRAM
+const int NUM_SAMPLES = 100; // Reducido de 100 a 50 para optimizar SRAM
 float sumSquares[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0}; // Suma de cuadrados para RMS
 int sampleCount = 0;
 unsigned long sampleInterval = 10; // Intervalo entre muestras en ms
