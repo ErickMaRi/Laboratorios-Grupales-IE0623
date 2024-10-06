@@ -7,15 +7,14 @@
 // Definición de Pines y Constantes
 // -----------------------------
 
-
 const int NUM_CHANNELS = 4;
 
 // Pines para controlar la transmisión serial y modo AC/DC
-const int USART_SWITCH_PIN = 7; // Pin para controlar la transmisión serial
-const int MODE_SWITCH_PIN = 6;  // Pin para seleccionar entre AC y DC
+const int USART_SWITCH_PIN = A5; // Control de transmisión serial
+const int MODE_SWITCH_PIN = A4;  // Seleccionar entre AC y DC
 
 // Pines para alarmas (LEDs)
-const int ALARM_PINS[NUM_CHANNELS] = {0, 1, 2, 3};
+const int ALARM_PINS[NUM_CHANNELS] = {2, 3, 4, 5};
 
 // Pines para ADC (A0 - A3)
 const int ADC_PINS[NUM_CHANNELS] = {A0, A1, A2, A3};
@@ -27,7 +26,6 @@ const int ADC_PINS[NUM_CHANNELS] = {A0, A1, A2, A3};
 #define DIN_PIN 11
 #define CLK_PIN 13
 
-
 // Parámetros de voltaje
 const float V_IN_MIN = -24.0; // Voltios en las entradas analógicas
 const float V_IN_MAX = 24.0;  // Voltios
@@ -35,8 +33,9 @@ const float V_ADC_MIN = 0.0;  // Voltios
 const float V_ADC_MAX = 5.0;  // Voltios
 
 // Límites para activar alarmas
-const float ALARM_THRESHOLD_LOW = -20.0; // Voltios
-const float ALARM_THRESHOLD_HIGH = 20.0; // Voltios
+const float ALARM_THRESHOLD_LOW_DC = -20.0; // Voltios para DC
+const float ALARM_THRESHOLD_HIGH_DC = 20.0; // Voltios para DC
+const float ALARM_THRESHOLD_HIGH_AC = 14.14; // Voltios para AC
 
 // Configuración del puerto serial
 const unsigned long SERIAL_BAUD_RATE = 9600;
@@ -48,9 +47,9 @@ float realVoltages[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0};
 bool alarms[NUM_CHANNELS] = {false, false, false, false};
 
 // Temporizador para medir voltajes AC
-const int NUM_SAMPLES = 100; // Número de muestras para cálculo RMS
-float samples[NUM_SAMPLES][NUM_CHANNELS]; // Muestras para cada canal
-int sampleIndex = 0;
+const int NUM_SAMPLES = 50; // Reducido de 100 a 50 para optimizar SRAM
+float sumSquares[NUM_CHANNELS] = {0.0, 0.0, 0.0, 0.0}; // Suma de cuadrados para RMS
+int sampleCount = 0;
 unsigned long sampleInterval = 10; // Intervalo entre muestras en ms
 unsigned long lastSampleTime = 0;
 
@@ -63,9 +62,6 @@ bool currentMode = false; // False: DC, True: AC
 
 // Variables para manejar el USART
 bool serialEnabled = false;
-
-// Parámetro para controlar el modo de prueba
-const bool USE_TEST_MODE = true; // Modo de prueba activado
 
 // -----------------------------
 // Clase DisplayManager
@@ -94,7 +90,7 @@ class DisplayManager {
       display.println("Voltimetro de 4 Canales");
       display.println("Inicializando...");
       display.display();                   // Muestra el texto en la pantalla
-      delay(2000);                         // Espera 2 segundos para que el usuario lea el mensaje
+      delay(1000);                         // Espera 2 segundos para que el usuario lea el mensaje
       display.clearDisplay();              // Limpia la pantalla nuevamente
       display.display();                   // Envía el cambio a la pantalla
     }
@@ -146,7 +142,7 @@ class DisplayManager {
     }
 
     // Función para mostrar las alarmas en la pantalla
-    void displayAlarms(bool alarms[]) {
+    void displayAlarms(bool alarms[], bool isAC[]) {
       bool needsUpdate = false; // Bandera para saber si se necesita actualizar la pantalla
 
       // Revisa si las alarmas han cambiado desde la última vez que se mostraron
@@ -245,32 +241,42 @@ float scaleVoltage(int adcValue) {
 }
 
 /*
-  Función para calcular el voltaje RMS a partir de muestras.
-  @param samples: Array de muestras de voltaje
+  Función para calcular el voltaje RMS a partir de una suma de cuadrados.
+  @param sumSquares: Suma de los cuadrados de las muestras
   @param numSamples: Número de muestras
   @return Voltaje RMS
 */
-float calculateRMS(float samplesArray[], int numSamples) {
-  float sumSquares = 0.0;
-  for(int i = 0; i < numSamples; i++) {
-    sumSquares += samplesArray[i] * samplesArray[i];
-  }
+float calculateRMS(float sumSquares, int numSamples) {
   float meanSquares = sumSquares / numSamples;
   return sqrt(meanSquares);
 }
 
 /*
-  Función para manejar las alarmas y actualizar el estado de los LEDs.
+  Función para manejar las alarmas y actualizar el estado de las LEDs.
   @param voltages: Array de voltajes de cada canal
+  @param isAC: Array que indica si cada canal está en modo AC
 */
-void handleAlarms(float voltages[]) {
+void handleAlarms(float voltages[], bool isAC[]) {
   for(int i = 0; i < NUM_CHANNELS; i++) {
-    if(voltages[i] < ALARM_THRESHOLD_LOW || voltages[i] > ALARM_THRESHOLD_HIGH) {
-      alarms[i] = true;
-      digitalWrite(ALARM_PINS[i], HIGH); // Enciende el LED de alarma
-    } else {
-      alarms[i] = false;
-      digitalWrite(ALARM_PINS[i], LOW);  // Apaga el LED de alarma
+    if(isAC[i]) { // Modo AC
+      if(voltages[i] > ALARM_THRESHOLD_HIGH_AC) {
+        alarms[i] = true;
+        digitalWrite(ALARM_PINS[i], HIGH); // Enciende el LED de alarma
+      }
+      else {
+        alarms[i] = false;
+        digitalWrite(ALARM_PINS[i], LOW);  // Apaga el LED de alarma
+      }
+    }
+    else { // Modo DC
+      if(voltages[i] > ALARM_THRESHOLD_HIGH_DC || voltages[i] < ALARM_THRESHOLD_LOW_DC) {
+        alarms[i] = true;
+        digitalWrite(ALARM_PINS[i], HIGH); // Enciende el LED de alarma
+      }
+      else {
+        alarms[i] = false;
+        digitalWrite(ALARM_PINS[i], LOW);  // Apaga el LED de alarma
+      }
     }
   }
 }
@@ -311,23 +317,35 @@ void setup() {
     digitalWrite(ALARM_PINS[i], LOW); // Apaga los LEDs de alarma inicialmente
   }
 
-  if(!USE_TEST_MODE){
-    // Configuración de pines de switch como entrada con pull-up
-    pinMode(MODE_SWITCH_PIN, INPUT_PULLUP); // Modo AC/DC
-    pinMode(USART_SWITCH_PIN, INPUT_PULLUP); // Control USART
+  // Configuración de pines de switch como entrada con pull-up
+  pinMode(MODE_SWITCH_PIN, INPUT_PULLUP); // Modo AC/DC
+  pinMode(USART_SWITCH_PIN, INPUT_PULLUP); // Control USART
 
-    // Inicializar comunicación serial
-    Serial.begin(SERIAL_BAUD_RATE);
-  }
+  // Inicializar comunicación serial
+  Serial.begin(SERIAL_BAUD_RATE);
 
   // Configuración de pines ADC como entrada (implícito en Arduino)
   for(int i = 0; i < NUM_CHANNELS; i++) {
     pinMode(ADC_PINS[i], INPUT);
   }
 
+  // Inicializar las sumas de cuadrados para evitar valores basura
+  for(int i = 0; i < NUM_CHANNELS; i++) {
+    sumSquares[i] = 0.0;
+  }
+
+  // Inicializar el contador de muestras
+  sampleCount = 0;
+
+  // Crear un array temporal para los modos, todos iniciados según 'currentMode'
+  bool isAC[NUM_CHANNELS];
+  for(int i = 0; i < NUM_CHANNELS; i++) {
+    isAC[i] = currentMode;
+  }
+
   // Mostrar voltajes iniciales en la pantalla
-  displayManager.displayVoltages(realVoltages, alarms);
-  displayManager.displayAlarms(alarms);
+  displayManager.displayVoltages(realVoltages, isAC);
+  displayManager.displayAlarms(alarms, isAC); // Inicialmente, no hay alarmas
 }
 
 // -----------------------------
@@ -340,168 +358,94 @@ void setup() {
   y se envían los datos a la PC si está habilitado.
 */
 void loop() {
-  if(USE_TEST_MODE){
-    // Modo de prueba: utilizar voltajes simulados
-    static unsigned long previousMillis = 0;
-    const long interval = 5000; // Intervalo de 5 segundos para cambiar los datos simulados
+  // Modo Real: leer voltajes desde ADC
+  unsigned long currentMillis = millis();
 
-    unsigned long currentMillis = millis();
+  // Leer el modo AC/DC desde el switch
+  bool modeSwitch = readModeSwitch(); // True: AC, False: DC
+  currentMode = modeSwitch;
 
-    // Verifica si ha pasado el intervalo de tiempo para simular cambios
-    if(currentMillis - previousMillis >= interval){
-      previousMillis = currentMillis; // Actualiza el tiempo anterior
+  // Verificar si la transmisión serial está habilitada
+  serialEnabled = isSerialEnabledFunc();
 
-      // Simula diferentes escenarios de voltajes y alarmas
-      static int cycle = 0; // Variable para llevar el conteo de ciclos
-      cycle++;              // Incrementa el ciclo
-      switch(cycle % 4) {   // Cambia de escenario cada 4 ciclos
-        case 0:
-          // Escenario 1: Sin alarmas, todos en modo DC
-          realVoltages[0] = 12.34;
-          realVoltages[1] = 15.00;
-          realVoltages[2] = 5.67;
-          realVoltages[3] = 19.80;
-          break;
-        case 1:
-          // Escenario 2: Alarma en CH2 y CH4, Modo AC en CH1 y CH4
-          realVoltages[0] = 10.00;
-          realVoltages[1] = -22.50;
-          realVoltages[2] = 7.89;
-          realVoltages[3] = 21.50;
-          break;
-        case 2:
-          // Escenario 3: Múltiples alarmas, todos en modo DC
-          realVoltages[0] = 25.00;
-          realVoltages[1] = -25.00;
-          realVoltages[2] = 30.00;
-          realVoltages[3] = -30.00;
-          break;
-        case 3:
-          // Escenario 4: Alarma en CH3, Modo AC en CH2
-          realVoltages[0] = 18.75;
-          realVoltages[1] = 20.00;
-          realVoltages[2] = 22.00;
-          realVoltages[3] = 19.00;
-          break;
-      }
+  // Crear un array temporal para los modos, todos iniciados según 'currentMode'
+  bool isAC[NUM_CHANNELS];
+  for(int i = 0; i < NUM_CHANNELS; i++) {
+    isAC[i] = currentMode;
+  }
 
-      // Actualiza el modo AC/DC basado en el ciclo
-      // Para simplificar, alternamos el modo globalmente en cada ciclo
-      currentMode = (cycle % 2 == 0) ? false : true;
+  // Leer voltajes de cada canal
+  for(int i = 0; i < NUM_CHANNELS; i++) {
+    int adcValue = analogRead(ADC_PINS[i]); // Leer el valor del ADC
+    float scaledVoltage = scaleVoltage(adcValue);
 
-      // Actualiza los modos individuales si es necesario
-      // Aquí, dependiendo del escenario, se pueden ajustar los modos por canal
+    if(currentMode) { // Modo AC
+      // Acumular la suma de cuadrados
+      sumSquares[i] += scaledVoltage * scaledVoltage;
+    }
+    else { // Modo DC
+      // Escalar voltaje directamente
+      realVoltages[i] = scaledVoltage;
+    }
+  }
 
-      // Manejar alarmas y actualizar LEDs
-      handleAlarms(realVoltages);
-
-      // Actualizar la pantalla con los nuevos voltajes
-      displayManager.displayVoltages(realVoltages, alarms);
-
-      // Verifica si hay alguna alarma activa
-      bool anyAlarm = false;
-      for(int i = 0; i < NUM_CHANNELS; i++) {
-        if(alarms[i]){
-          anyAlarm = true; // Si hay al menos una alarma, marca la bandera
-          break;           // No es necesario seguir revisando
+  if(currentMode){
+    // Manejar muestras para AC
+    if(currentMillis - lastSampleTime >= sampleInterval){
+      lastSampleTime = currentMillis;
+      sampleCount++;
+      if(sampleCount >= NUM_SAMPLES){
+        // Calcular RMS para cada canal
+        for(int i = 0; i < NUM_CHANNELS; i++) {
+          realVoltages[i] = calculateRMS(sumSquares[i], NUM_SAMPLES);
+          sumSquares[i] = 0.0; // Reiniciar la suma
         }
-      }
-
-      if(anyAlarm){
-        // Si hay alarmas, las muestra en la pantalla
-        displayManager.displayAlarms(alarms);
-      } else {
-        // Si no hay alarmas, limpia la sección de alarmas
-        displayManager.clearAlarms();
+        sampleCount = 0;
       }
     }
   }
-  // Para la entrega sacamos toda la lógica del else y eliminamos del todo el if
+
+  // Manejar alarmas y actualizar LEDs
+  handleAlarms(realVoltages, isAC);
+
+  // Actualizar la pantalla con los nuevos voltajes
+  displayManager.displayVoltages(realVoltages, isAC);
+
+  // Verificar si hay alguna alarma activa
+  bool anyAlarm = false;
+  for(int i = 0; i < NUM_CHANNELS; i++) {
+    if(alarms[i]){
+      anyAlarm = true; // Si hay al menos una alarma, marca la bandera
+      break;           // No es necesario seguir revisando
+    }
+  }
+
+  if(anyAlarm){
+    // Si hay alarmas, las muestra en la pantalla
+    displayManager.displayAlarms(alarms, isAC);
+  }
   else{
-    // Modo Real: leer voltajes desde ADC
-    unsigned long currentMillis = millis();
+    // Si no hay alarmas, limpia la sección de alarmas
+    displayManager.clearAlarms();
+  }
 
-    // Leer el modo AC/DC desde el switch
-    bool modeSwitch = readModeSwitch(); // True: AC, False: DC
-    currentMode = modeSwitch;
+  // Enviar datos vía serial si está habilitado
+  if(serialEnabled){
+    if(currentMillis - lastSerialSend >= serialInterval){
+      lastSerialSend = currentMillis;
 
-    // Verificar si la transmisión serial está habilitada
-    serialEnabled = isSerialEnabledFunc();
-
-    // Leer voltajes de cada canal
-    for(int i = 0; i < NUM_CHANNELS; i++) {
-      int adcValue = analogRead(ADC_PINS[i]); // Leer el valor del ADC
-      float scaledVoltage;
-
-      if(currentMode) { // Modo AC
-        // Almacenar muestras para cálculo RMS
-        samples[sampleIndex][i] = scaleVoltage(adcValue);
-      }
-      else { // Modo DC
-        // Escalar voltaje directamente
-        scaledVoltage = scaleVoltage(adcValue);
-        realVoltages[i] = scaledVoltage;
-      }
-    }
-
-    if(currentMode){
-      // Manejar muestras para AC
-      if(currentMillis - lastSampleTime >= sampleInterval){
-        lastSampleTime = currentMillis;
-        sampleIndex++;
-        if(sampleIndex >= NUM_SAMPLES){
-          // Calcular RMS para cada canal
-          for(int i = 0; i < NUM_CHANNELS; i++) {
-            float rms = calculateRMS(samples[i], NUM_SAMPLES);
-            realVoltages[i] = rms;
-          }
-          sampleIndex = 0;
+      // Formatear los datos en formato CSV
+      String csvData = "";
+      for(int i = 0; i < NUM_CHANNELS; i++) {
+        csvData += String(realVoltages[i], 2);
+        if(i < NUM_CHANNELS - 1){
+          csvData += ",";
         }
       }
-    }
+      csvData += "\n";
 
-    // Manejar alarmas y actualizar LEDs
-    handleAlarms(realVoltages);
-
-    // Actualizar la pantalla con los nuevos voltajes
-    displayManager.displayVoltages(realVoltages, alarms);
-
-    // Verificar si hay alguna alarma activa
-    bool anyAlarm = false;
-    for(int i = 0; i < NUM_CHANNELS; i++) {
-      if(alarms[i]){
-        anyAlarm = true; // Si hay al menos una alarma, marca la bandera
-        break;           // No es necesario seguir revisando
-      }
-    }
-
-    if(anyAlarm){
-      // Si hay alarmas, las muestra en la pantalla
-      displayManager.displayAlarms(alarms);
-    }
-    else{
-      // Si no hay alarmas, limpia la sección de alarmas
-      displayManager.clearAlarms();
-    }
-
-    // Enviar datos vía serial si está habilitado
-    if(serialEnabled){
-      if(currentMillis - lastSerialSend >= serialInterval){
-        lastSerialSend = currentMillis;
-
-        // Formatear los datos en formato CSV
-        String csvData = "";
-        for(int i = 0; i < NUM_CHANNELS; i++) {
-          csvData += String(realVoltages[i], 2);
-          if(i < NUM_CHANNELS - 1){
-            csvData += ",";
-          }
-        }
-        csvData += "\n";
-
-        // Enviar los datos por serial
-        Serial.print(csvData);
-      }
+      // Enviar los datos por serial
+      Serial.print(csvData);
     }
   }
 }
