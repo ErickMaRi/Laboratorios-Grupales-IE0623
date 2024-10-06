@@ -159,8 +159,8 @@ class DisplayManager {
         const int alarmY = voltagesAreaHeight + 1;        // Posición vertical donde empieza la sección de alarmas
 
         // Limpia la sección de alarmas
-        // Determinamos la altura necesaria para las alarmas, suponiendo una sola línea de texto
-        display.fillRect(0, alarmY, 84, 8, WHITE); // 8 píxeles de altura para alarmas
+        // Aumentamos la altura a 15 píxeles para asegurar que se limpie completamente cualquier mensaje previo
+        display.fillRect(0, alarmY, 84, 15, WHITE); // 15 píxeles de altura para alarmas
         display.setTextSize(1);           // Tamaño pequeño del texto
         display.setTextColor(BLACK);       // Color del texto (negro)
         display.setCursor(0, alarmY);       // Posiciona el cursor
@@ -198,7 +198,8 @@ class DisplayManager {
       const int alarmY = voltagesAreaHeight + 1;        // Posición vertical donde empieza la sección de alarmas
 
       // Limpia la sección de alarmas
-      display.fillRect(0, alarmY, 84, 8, WHITE); // 8 píxeles de altura para alarmas
+      // Aumentamos la altura a 15 píxeles para asegurar que se limpie completamente cualquier mensaje previo
+      display.fillRect(0, alarmY, 84, 15, WHITE); // 15 píxeles de altura para alarmas
       display.setTextSize(1);           // Tamaño pequeño del texto
       display.setTextColor(BLACK);      // Color del texto (negro)
       display.setCursor(0, alarmY);      // Posiciona el cursor
