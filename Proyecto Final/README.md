@@ -42,5 +42,6 @@ El diagrama del circuito diseñado se incluye a continuación:
 | [Resistencias 1kΩ](https://www.microjpm.com/products/resistencia-1-4-w-1-ko/) | 8        | $0.05           | $0.40        |
 | [Resistencias 2kΩ](https://www.microjpm.com/products/resistencia-1-4-w-2-ko/) | 5        | $0.05           | $0.25        |
 | [Arduino Uno R3](https://www.crcibernetica.com/official-arduino-uno-rev-3/) | 1        | $35.95          | $35.95       |
+| [Fuente de poder 9V 1A](https://www.crcibernetica.com/wall-adapter-power-supply-9v-1a/) | 1        | $4.95          | $4.95       |
 
 ## Referencias
