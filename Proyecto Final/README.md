@@ -25,6 +25,8 @@ Consideremos según nuestra propuesta las tres posibles acciones del usuario fre
 
 Donde anterior y siguiente siguen la misma lógica aproximadamente.
 
+La cara del sistema vista por el encargado
+
 ## Diseño
 
 
