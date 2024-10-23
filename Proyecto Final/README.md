@@ -25,7 +25,7 @@ Consideremos según nuestra propuesta las tres posibles acciones del usuario fre
 
 Donde anterior y siguiente siguen la misma lógica aproximadamente.
 
-La cara del sistema vista por el encargado
+La cara del sistema vista por el encargado en su mayoría es una dependencia, pues usaremos la API de Google Calendar y el uso de Things Board para el monitoreo e ingreso de datos por parte de una persona encargada. 
 
 ## Diseño
 
