@@ -1,6 +1,6 @@
 # Proyecto Final
 
-El siguiente sirve para documentar el proyecto final del curso IE-0624 Laboratorio de Microcontroladores de la Universidad de Costa Rica.
+El siguiente sirve para documentar el proyecto final del curso IE-0624 Laboratorio de Microcontroladores de la Universidad de Costa Rica. Que consta del diseño de un sistema de E-lettering usando internet de las cosas.
 
 ## Descripción 
 
