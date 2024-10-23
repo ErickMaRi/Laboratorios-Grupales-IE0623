@@ -4,6 +4,8 @@ El siguiente sirve para documentar el proyecto final del curso IE-0624 Laborator
 
 ## Descripción 
 
+![Diagrama plant UML sistema](https://www.plantuml.com/plantuml/png/RLBDQXin4BxhAGQVsiDIw26KO4pY98L2tPg6q4FeOInDDrDhDSj8Ce7IfyeZvCKwjfQmaEWavllc-n6wo0Mrr26wmYKIN3FsYWF2Xlw8OX085E6MSo4RRbN6IhaSfq1Tf598EVNEvJsd4MqJl0oZ94e5_ZgmiqQ_xrLg2bSIHU4hzmzb7IirL3IGDkGQTNy2_ZatsXRs18l9UZ6ftLzgg9m4xfByWkLoOA_Y9HMLQ6brjOB6spm_XHe5RcwtdpwUdHsv-O4f1cF0nDbYAXWZ7a6Av8i-FoNs-2Aobc9LybkuPKHVBFLThgWiW1aMqtq1pjstkuNikjLCwHnk7aThYq07UoJ9C-Qow-QXpk7xBfCU42B2E8tT_0MQ-Ekkvt1bReziSU4dVsRtYj8MlzKTdIAb0wD--46UTwmGq7B1kyljb_TlsSqJRYGNHGLElqK7z4TBzzAsyMSApSms0fu-LctLtGMbO9_mFm00)
+
 Se propuso diseñar un sistema que realice la interfaz entre nuestra pantalla y la API de calendario para presentar el actual y siguientes eventos, con el nombre de los mismos y hora. Que muestre los distintos eventos de un calendario en un slideshow cada ciertos segundos.
 
 Desplegando información sobre los detalles del evento como:
@@ -18,6 +20,7 @@ Dentro de los requerimientos mínimos para el cumplimiento del proyecto, se esta
 3. Diseñar una plataforma para que los encargados establezcan el calendario a utilizar.
 
 ## Diseño
+
 
 ## Componentes 
 
