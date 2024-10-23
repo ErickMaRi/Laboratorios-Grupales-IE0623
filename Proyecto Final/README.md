@@ -14,7 +14,7 @@ Se diseña con el objetivo de colocarse en la entrada de una oficina, espacio de
 
 Dentro de los requerimientos mínimos para el cumplimiento del proyecto, se estableció a gracias a la retroalimentación el día de la propuesta:
 1. Usar una pantalla con mayor resolución.
-2. Añadir dos botones para ver las actividades futuras
+2. Añadir botones para ver las actividades futuras, además de retornar a la actual.
 3. Diseñar una plataforma para que los encargados establezcan el calendario a utilizar.
 
 ## Diseño
