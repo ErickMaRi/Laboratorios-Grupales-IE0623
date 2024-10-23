@@ -28,7 +28,9 @@ Donde presionar el botón anterior y siguiente siguen la misma lógica aproximad
 La cara del sistema vista por el encargado en su mayoría es una dependencia, pues usaremos la API de Google Calendar y el uso de Things Board para el monitoreo e ingreso de datos por parte de una persona encargada. 
 
 ## Diseño
+El diagrama del circuito diseñado se incluye a continuación
 
+![Diagrama del diseño](Imagenes/diagrama_del_circuito.png)
 
 ## Componentes 
 
