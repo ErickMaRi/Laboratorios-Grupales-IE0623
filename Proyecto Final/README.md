@@ -12,7 +12,10 @@ Desplegando información sobre los detalles del evento como:
 
 Se diseña con el objetivo de colocarse en la entrada de una oficina, espacio de reuniones, aula, consultorio y otros espacios en los que es sensible el calendario a seguir sin interrupciones.
 
-Dentro de los requerimientos mínimos para el cumplimiento del proyecto, se estableció a gracias a la retroalimentación el día de la propuesta, usar una pantalla táctil con mayor resolución y diseñar una plataforma para que los encargados establezcan el calendario a utilizar.
+Dentro de los requerimientos mínimos para el cumplimiento del proyecto, se estableció a gracias a la retroalimentación el día de la propuesta:
+1. Usar una pantalla con mayor resolución.
+2. Añadir dos botones para ver las actividades futuras
+3. Diseñar una plataforma para que los encargados establezcan el calendario a utilizar.
 
 ## Diseño
 
