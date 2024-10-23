@@ -28,10 +28,18 @@ Donde presionar el botón anterior y siguiente siguen la misma lógica aproximad
 La cara del sistema vista por el encargado en su mayoría es una dependencia, pues usaremos la API de Google Calendar y el uso de Things Board para el monitoreo e ingreso de datos por parte de una persona encargada. 
 
 ## Diseño
-El diagrama del circuito diseñado se incluye a continuación
+El diagrama del circuito diseñado se incluye a continuación:
 
 ![Diagrama del diseño](Imagenes/diagrama_del_circuito.png)
 
 ## Componentes 
+| Componente               | Cantidad | Precio Unitario | Precio Total |
+|--------------------------|----------|-----------------|--------------|
+| ST7735 TFT Display        | 1        | $13.95          | $13.95       |
+| ESP8266                   | 1        | $8.95           | $8.95        |
+| Botón                     | 3        | $0.35           | $1.05        |
+| Resistencias 1k           | 8        | $0.05           | $0.40        |
+| Resistencias 2k           | 5        | $0.05           | $0.25        |
+| Arduino Uno R3            | 1        | $35.95          | $35.95       |
 
 ## Referencias
