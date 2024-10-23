@@ -32,14 +32,15 @@ El diagrama del circuito diseñado se incluye a continuación:
 
 ![Diagrama del diseño](Imagenes/diagrama_del_circuito.png)
 
-## Componentes 
-| Componente               | Cantidad | Precio Unitario | Precio Total |
-|--------------------------|----------|-----------------|--------------|
-| ST7735 TFT Display        | 1        | $13.95          | $13.95       |
-| ESP8266                   | 1        | $8.95           | $8.95        |
-| Botón                     | 3        | $0.35           | $1.05        |
-| Resistencias 1k           | 8        | $0.05           | $0.40        |
-| Resistencias 2k           | 5        | $0.05           | $0.25        |
-| Arduino Uno R3            | 1        | $35.95          | $35.95       |
+## Componentes
+
+| Componente                                       | Cantidad | Precio Unitario | Precio Total |
+|--------------------------------------------------|----------|-----------------|--------------|
+| [ST7735 TFT Display](https://www.crcibernetica.com/1-8-inch-128-x-160-pixels-for-arduino-tft-lcd-display-module-with-sdcard-slot/)        | 1        | $13.95          | $13.95       |
+| [ESP8266](https://www.crcibernetica.com/esp8266-serial-wifi-module/)                              | 1        | $8.95           | $8.95        |
+| [Botón](https://www.crcibernetica.com/mini-push-button-switch/)                                  | 3        | $0.35           | $1.05        |
+| [Resistencias 1kΩ](https://www.microjpm.com/products/resistencia-1-4-w-1-ko/) | 8        | $0.05           | $0.40        |
+| [Resistencias 2kΩ](https://www.microjpm.com/products/resistencia-1-4-w-2-ko/) | 5        | $0.05           | $0.25        |
+| [Arduino Uno R3](https://www.crcibernetica.com/official-arduino-uno-rev-3/) | 1        | $35.95          | $35.95       |
 
 ## Referencias
