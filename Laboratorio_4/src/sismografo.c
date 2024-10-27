@@ -1,3 +1,24 @@
+/*
+ * This file is part of the libopencm3 project.
+ *
+ * Copyright (C) 2009 Uwe Hermann <uwe@hermann-uwe.de>,
+ * Copyright (C) 2010-2015 Piotr Esden-Tempski <piotr@esden.net>
+ * Copyright (C) 2011 Stephen Caudle <scaudle@doceme.com>
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdint.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -7,9 +28,11 @@
 
 void setup_spi(void);
 uint16_t read_reg(int reg);
-int print_decimal(int num);
 uint8_t read_xyz(int16_t vecs[3]);
+int print_decimal(int num);
 void display_xyz(int16_t vecs[3]);
+
+volatile uint8_t usart_enabled = 0;
 
 void setup_spi(void){
     //Habilitar el reloj
@@ -40,96 +63,133 @@ void setup_spi(void){
     spi_enable(SPI5);
 }
 
+static void gpio_setup(void)
+{
+	/* Enable GPIOG clock. */
+	rcc_periph_clock_enable(RCC_GPIOG);
+
+	/* Set GPIO13 (in GPIO port G) to 'output push-pull'. */
+	gpio_mode_setup(GPIOG, GPIO_MODE_OUTPUT,
+			GPIO_PUPD_NONE, GPIO13);
+}
+
+static void button_setup(void)
+{
+	/* Enable GPIOA clock. */
+	rcc_periph_clock_enable(RCC_GPIOA);
+
+	/* Set GPIO0 (in GPIO port A) to 'input open-drain'. */
+	gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO0);
+}
+
+uint16_t read_reg(int reg)
+{
+	uint16_t d1, d2;
+
+	d1 = 0x80 | (reg & 0x3f); /* Read operation */
+	/* Nominallly a register read is a 16 bit operation */
+	gpio_clear(GPIOC, GPIO1);
+	spi_send(SPI5, d1);
+	d2 = spi_read(SPI5);
+	d2 <<= 8;
+	/*
+	 * You have to send as many bits as you want to read
+	 * so we send another 8 bits to get the rest of the
+	 * register.
+	 */
+	spi_send(SPI5, 0);
+	d2 |= spi_read(SPI5);
+	gpio_set(GPIOC, GPIO1);
+	return d2;
+}
+
+uint8_t read_xyz(int16_t vecs[3])
+{
+	uint8_t	 buf[7];
+	int		 i;
+
+	gpio_clear(GPIOC, GPIO1); /* CS* select */
+	spi_send(SPI5, 0xc0 | 0x28);
+	(void) spi_read(SPI5);
+	for (i = 0; i < 6; i++) {
+		spi_send(SPI5, 0);
+		buf[i] = spi_read(SPI5);
+	}
+	gpio_set(GPIOC, GPIO1); /* CS* deselect */
+	vecs[0] = (buf[1] << 8 | buf[0]);
+	vecs[1] = (buf[3] << 8 | buf[2]);
+	vecs[2] = (buf[5] << 8 | buf[4]);
+	return read_reg(0x27); /* Status register */
+}
+
 int print_decimal(int num)
 {
-	int		ndx = 0; //indice
+	int		ndx = 0;
 	char	buf[10];
 	int		len = 0;
-	char	is_signed = 0; //Se usa para indicar negativos
+	char	is_signed = 0;
 
 	if (num < 0) {
-        //Si el número es negativo  se indica en la bandera y se pasa a positivo
 		is_signed++;
 		num = 0 - num;
 	}
 	buf[ndx++] = '\000';
 	do {
-        //Convertir en caracteres
 		buf[ndx++] = (num % 10) + '0';
 		num = num / 10;
 	} while (num != 0);
 	ndx--;
 	if (is_signed != 0) {
-		//Imprimir negativo de ser necesario
 		console_putc('-');
 		len++;
 	}
 	while (buf[ndx] != '\000') {
-        //Imprimir dígitos
 		console_putc(buf[ndx--]);
 		len++;
 	}
 	return len; /* number of characters printed */
 }
 
-uint16_t read_reg(int reg){
-    uint16_t d1, d2;
-
-    gpio_clear(GPIOC, GPIO1);  // Se pone  en bajo el pin CS
-    d1 = 0x80 | (reg & 0x3f); // Mascara
-    spi_send(SPI5, d1);        // Se indica cual registro se quiere leer
-    d2 = spi_read(SPI5);       // Se lee primera parte
-    d2 <<= 8;
-    
-    spi_send(SPI5, 0);         // Se envia un 0
-    d2 |= spi_read(SPI5);      // Se lee segunda parte
-    gpio_set(GPIOC, GPIO1);    // Se pone en alto el pin CS
-    return d2;
-}
-
-uint8_t read_xyz(int16_t vecs[3]) {
-    uint8_t buf[6];  // Buffer 
-    int i;
-
-    gpio_clear(GPIOC, GPIO1);  // Se pone  en bajo el pin CS
-    spi_send(SPI5, 0xc0 | 0x28);  // Leer desde eje x
-    (void) spi_read(SPI5);
-
-    for (i = 0; i < 6; i++) {
-        spi_send(SPI5, 0);  // Se envia un byte para recibir información
-        buf[i] = spi_read(SPI5);  // Leer datos
-    }
-    gpio_set(GPIOC, GPIO1);  // Se pone en alto el pin CS
-
-    // Pasar de 8 a 16 bits
-    vecs[0] = (buf[1] << 8 | buf[0]);  // X
-    vecs[1] = (buf[3] << 8 | buf[2]);  // Y
-    vecs[2] = (buf[5] << 8 | buf[4]);  // Z
-    return read_reg(0x27);  
-}
-
 void display_xyz(int16_t vecs[3]){
-    console_puts("X: ");
-    print_decimal(vecs[0]);
-    console_puts(", Y: ");
-    print_decimal(vecs[1]);
-    console_puts(", Z: ");
-    print_decimal(vecs[2]);
-    console_puts("\n");
+	console_puts("X: ");
+	print_decimal(vecs[0]);  
+	console_puts("\n");
+
+	console_puts("Y: ");
+	print_decimal(vecs[1]);  
+	console_puts("\n");
+
+	console_puts("Z: ");
+	print_decimal(vecs[2]);  
+	console_puts("\n\n");
 }
 
-int main(void) {
+int main(void)
+{
     int16_t vecs[3];  // Almacena información de los ejes
+	clock_setup();     // Se inicializa el reloj
+	button_setup();
+	gpio_setup();
+	setup_spi();       //  Se inicializa SPI5
+	console_setup(115200);  // Se inicializa la consola
 
-    clock_setup();     // Se inicializa el reloj
-    console_setup(115200);  // Se inicializa la consola
-    setup_spi();       //  Se inicializa SPI5
+	// console_puts("Leyendo Gyroscopio...\n");
 
-    console_puts("Reading Gyroscope values...\n");
+	while (1) {
+		if (gpio_get(GPIOA, GPIO0)) {
+            usart_enabled = !usart_enabled;  // Toggle bandera
+            msleep(300);  // Debounce delay
+        }
+		if (usart_enabled) {
+            gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
+			// display_xyz(vecs); //Mostrar X, Y, Z en consola
+            msleep(500);
+        }else {
+            gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
+        }
+		read_xyz(vecs);  // Leer X, Y, Z
+        // display_xyz(vecs); //Mostrar X, Y, Z en consola
+	}
 
-    while (1) {
-        read_xyz(vecs);  // Leer X, Y, Z
-        display_xyz(vecs); //Mostrar X, Y, Z en consola
-        msleep(1000);  // Esperar antes de correr nuevamente
-    }
+	return 0;
 }
