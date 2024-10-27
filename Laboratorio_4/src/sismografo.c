@@ -82,6 +82,21 @@ static void button_setup(void)
 	gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO0);
 }
 
+static void usart_setup(void)
+{
+	rcc_periph_clock_enable(RCC_USART1);
+	/* Setup USART2 parameters. */
+	usart_set_baudrate(USART1, 115200);
+	usart_set_databits(USART1, 8);
+	usart_set_stopbits(USART1, USART_STOPBITS_1);
+	usart_set_mode(USART1, USART_MODE_TX);
+	usart_set_parity(USART1, USART_PARITY_NONE);
+	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+
+	/* Finally enable the USART. */
+	usart_enable(USART1);
+}
+
 uint16_t read_reg(int reg)
 {
 	uint16_t d1, d2;
@@ -171,6 +186,7 @@ int main(void)
 	button_setup();
 	gpio_setup();
 	setup_spi();       //  Se inicializa SPI5
+	usart_setup(void);
 	console_setup(115200);  // Se inicializa la consola
 
 	// console_puts("Leyendo Gyroscopio...\n");
