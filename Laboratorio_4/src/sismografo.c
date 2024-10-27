@@ -23,6 +23,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
+#include <libopencm3/stm32/usart.h>
 #include "clock.h"
 #include "console.h"
 
@@ -31,6 +32,7 @@ uint16_t read_reg(int reg);
 uint8_t read_xyz(int16_t vecs[3]);
 int print_decimal(int num);
 void display_xyz(int16_t vecs[3]);
+static void usart_setup(void);
 
 volatile uint8_t usart_enabled = 0;
 
@@ -186,7 +188,7 @@ int main(void)
 	button_setup();
 	gpio_setup();
 	setup_spi();       //  Se inicializa SPI5
-	usart_setup(void);
+	usart_setup();
 	console_setup(115200);  // Se inicializa la consola
 
 	// console_puts("Leyendo Gyroscopio...\n");
