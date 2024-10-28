@@ -86,8 +86,8 @@ static void button_setup(void)
 
 static void usart_setup(void)
 {
-	rcc_periph_clock_enable(RCC_USART1);
-	/* Setup USART2 parameters. */
+	(RCC_USART1);
+	/* Setup USART2 rcc_periph_clock_enableparameters. */
 	usart_set_baudrate(USART1, 115200);
 	usart_set_databits(USART1, 8);
 	usart_set_stopbits(USART1, USART_STOPBITS_1);
@@ -97,6 +97,27 @@ static void usart_setup(void)
 
 	/* Finally enable the USART. */
 	usart_enable(USART1);
+}
+
+static void adc_setup(void)
+{
+	rcc_periph_clock_enable(RCC_ADC1);
+	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO3);
+	adc_power_off(ADC1);
+	adc_disable_scan_mode(ADC1);
+	adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_3CYC);
+	adc_power_on(ADC1);
+}
+
+static uint16_t read_adc_naiive(uint8_t channel)
+{
+	uint8_t channel_array[16];
+	channel_array[0] = channel;
+	adc_set_regular_sequence(ADC1, 1, channel_array);
+	adc_start_conversion_regular(ADC1);
+	while (!adc_eoc(ADC1));
+	uint16_t reg16 = adc_read_regular(ADC1);
+	return reg16;
 }
 
 uint16_t read_reg(int reg)
@@ -184,11 +205,13 @@ void display_xyz(int16_t vecs[3]){
 int main(void)
 {
     int16_t vecs[3];  // Almacena información de los ejes
+	uint16_t input_adc3;
 	clock_setup();     // Se inicializa el reloj
 	button_setup();
 	gpio_setup();
 	setup_spi();       //  Se inicializa SPI5
 	usart_setup();
+	adc_setup();
 	console_setup(115200);  // Se inicializa la consola
 
 	// console_puts("Leyendo Gyroscopio...\n");
@@ -206,6 +229,7 @@ int main(void)
             gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
         }
 		read_xyz(vecs);  // Leer X, Y, Z
+		input_adc3 = read_adc_naiive(3);
         // display_xyz(vecs); //Mostrar X, Y, Z en consola
 	}
 
