@@ -24,6 +24,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/adc.h>
 #include "clock.h"
 #include "console.h"
 
@@ -86,7 +87,7 @@ static void button_setup(void)
 
 static void usart_setup(void)
 {
-	(RCC_USART1);
+	rcc_periph_clock_enable(RCC_USART1);
 	/* Setup USART2 rcc_periph_clock_enableparameters. */
 	usart_set_baudrate(USART1, 115200);
 	usart_set_databits(USART1, 8);
