@@ -20,6 +20,7 @@
  */
 
 #include <stdint.h>
+#include <math.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
@@ -27,6 +28,9 @@
 #include <libopencm3/stm32/adc.h>
 #include "clock.h"
 #include "console.h"
+#include "sdram.h"
+#include "lcd-spi.h"
+#include "gfx.h"
 
 void setup_spi(void);
 uint16_t read_reg(int reg);
