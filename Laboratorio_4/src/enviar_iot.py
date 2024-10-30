@@ -39,17 +39,15 @@ def main():
             linea = ser.readline().decode('utf-8').strip()
             if linea:
                 print(f"Datos recibidos: {linea}")
-                # Los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
                 datos = [d.strip() for d in linea.split(',')]
-                
-                # Verificar que hay exactamente 4 campos y que ninguno está vacío
+
                 if len(datos) == 4 and all(d != '' for d in datos):
                     try:
                         telemetria = {
                             'gyro_x': float(datos[0]),
                             'gyro_y': float(datos[1]),
                             'gyro_z': float(datos[2]),
-                            'bateria': float(datos[3])
+                            'bateria': (50)(float(datos[3])-7)
                         }
                         enviar_datos_thingsboard(telemetria)
                     except ValueError as e:
