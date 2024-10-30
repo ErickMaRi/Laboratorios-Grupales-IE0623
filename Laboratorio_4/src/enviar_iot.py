@@ -12,7 +12,7 @@ BAUD_RATE = 115200  # Asegúrate de que coincida con la configuración del micro
 
 # Configuración de ThingsBoard
 THINGSBOARD_HOST = 'demo.thingsboard.io'
-ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplaza con el token de acceso del dispositivo
+ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplazar con el token de acceso del dispositivo
 
 # Inicializar conexión serial
 try:
