@@ -1,17 +1,14 @@
-# sismografo_iot.py
-
 import serial
 import time
 import json
 import requests
 
 # Configuración del puerto serial (actualiza el puerto según corresponda)
-# SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
-SERIAL_PORT = '/dev/ttyACM0'  # En Linux
+SERIAL_PORT = '/dev/ttyACM0'  # Actualiza según corresponda (ejemplo para Linux)
 BAUD_RATE = 115200  # Asegúrate de que coincida con la configuración del microcontrolador
 
 # Configuración de ThingsBoard
-THINGSBOARD_HOST = 'demo.thingsboard.io'
+THINGSBOARD_HOST = 'https://thingsboard.cloud'  # URL base correcta de tu instancia
 ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplaza con el token de acceso del dispositivo
 
 # Inicializar conexión serial
@@ -23,7 +20,7 @@ except serial.SerialException as e:
     exit(1)
 
 # URL de la API de ThingsBoard
-url = f"https://{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
+url = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
 
 def enviar_datos_thingsboard(telemetria):
     headers = {'Content-Type': 'application/json'}
@@ -45,16 +42,22 @@ def main():
                 # Suponiendo que los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
                 datos = linea.split(',')
                 if len(datos) == 4:
-                    telemetria = {
-                        'gyro_x': float(datos[0]),
-                        'gyro_y': float(datos[1]),
-                        'gyro_z': float(datos[2]),
-                        'bateria': float(datos[3])
-                    }
-                    enviar_datos_thingsboard(telemetria)
+                    try:
+                        telemetria = {
+                            'gyro_x': float(datos[0]),
+                            'gyro_y': float(datos[1]),
+                            'gyro_z': float(datos[2]),
+                            'bateria': float(datos[3])
+                        }
+                        enviar_datos_thingsboard(telemetria)
+                    except ValueError as e:
+                        print(f"Error al convertir datos a float: {e}")
                 else:
                     print("Formato de datos incorrecto")
             time.sleep(0.1)
+        except UnicodeDecodeError as e:
+            print(f"Error de decodificación: {e}")
+            continue
         except Exception as e:
             print(f"Error en la lectura del puerto serial: {e}")
             time.sleep(1)
