@@ -20,7 +20,9 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>  
 #include <math.h>
+#include <string.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
@@ -32,15 +34,17 @@
 #include "lcd-spi.h"
 #include "gfx.h"
 
+#define L3GD20_SENSITIVITY_250DPS ((float)8.75f)
+
 void setup_spi(void);
 uint16_t read_reg(int reg);
 uint8_t read_xyz(int16_t vecs[3]);
 int print_decimal(int num);
 void display_xyz(int16_t vecs[3]);
 static void usart_setup(void);
+void lcd_main_structure(void);
 
 volatile uint8_t usart_enabled = 0;
-
 void setup_spi(void){
     //Habilitar el reloj
     rcc_periph_clock_enable(RCC_SPI5);
@@ -159,9 +163,9 @@ uint8_t read_xyz(int16_t vecs[3])
 		buf[i] = spi_read(SPI5);
 	}
 	gpio_set(GPIOC, GPIO1); /* CS* deselect */
-	vecs[0] = (buf[1] << 8 | buf[0]);
-	vecs[1] = (buf[3] << 8 | buf[2]);
-	vecs[2] = (buf[5] << 8 | buf[4]);
+	vecs[0] = (buf[1] << 8 | buf[0])*L3GD20_SENSITIVITY_250DPS;
+	vecs[1] = (buf[3] << 8 | buf[2])*L3GD20_SENSITIVITY_250DPS;
+	vecs[2] = (buf[5] << 8 | buf[4])*L3GD20_SENSITIVITY_250DPS;
 	return read_reg(0x27); /* Status register */
 }
 
@@ -193,24 +197,48 @@ int print_decimal(int num)
 	return len; /* number of characters printed */
 }
 
-void display_xyz(int16_t vecs[3]){
-	console_puts("X: ");
-	print_decimal(vecs[0]);  
-	console_puts("\n");
+// void display_xyz(int16_t vects[3]){
+// 	console_puts("X: ");
+// 	print_decimal(vects[0]);  
+// 	console_puts("\n");
 
-	console_puts("Y: ");
-	print_decimal(vecs[1]);  
-	console_puts("\n");
+// 	console_puts("Y: ");
+// 	print_decimal(vects[1]);  
+// 	console_puts("\n");
 
-	console_puts("Z: ");
-	print_decimal(vecs[2]);  
-	console_puts("\n\n");
+// 	console_puts("Z: ");
+// 	print_decimal(vects[2]);  
+// 	console_puts("\n\n");
+// }
+
+void lcd_main_structure(void){
+	gfx_init(lcd_draw_pixel, 240, 320);
+	gfx_fillScreen(LCD_WHITE);
+	gfx_setTextSize(2.5);
+	gfx_setCursor(15, 25);
+	gfx_puts("Sismografo");
+	gfx_setTextSize(2);
+	gfx_setCursor(15, 49);
+	gfx_puts("X:");
+	gfx_setCursor(15, 73);
+	gfx_puts("Y:");
+	gfx_setCursor(15, 97);
+	gfx_puts("Z:");
+	gfx_setCursor(15, 121);
+	gfx_puts("V:");
+	// lcd_show_frame();
 }
 
 int main(void)
 {
-    int16_t vecs[3];  // Almacena información de los ejes
+	char volt[20];
+	float temp;
 	uint16_t input_adc3;
+	int16_t vecs[3];  // Almacena información de los ejes
+	char char_X[10];
+    char char_Y[10];
+    char char_Z[10];
+
 	clock_setup();     // Se inicializa el reloj
 	button_setup();
 	gpio_setup();
@@ -218,7 +246,8 @@ int main(void)
 	usart_setup();
 	adc_setup();
 	console_setup(115200);  // Se inicializa la consola
-
+	sdram_init();
+	lcd_spi_init();
 	// console_puts("Leyendo Gyroscopio...\n");
 
 	while (1) {
@@ -234,8 +263,31 @@ int main(void)
             gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
         }
 		read_xyz(vecs);  // Leer X, Y, Z
+		sprintf(char_X, "%d", vecs[0]);
+        sprintf(char_Y, "%d", vecs[1]);
+        sprintf(char_Z, "%d", vecs[2]);
+
 		input_adc3 = read_adc_naiive(3);
+		printf("adc3 = %u\n",
+			input_adc3);
+		temp = input_adc3* 9.0f / 4095.0f;
+		sprintf(volt, "%2f", temp);
+
+		lcd_main_structure();
+		gfx_setTextSize(2);
+		gfx_setCursor(40, 49);
+		gfx_puts(char_X);
+		gfx_setCursor(40, 73);
+		gfx_puts(char_Y);
+		gfx_setCursor(40, 97);
+		gfx_puts(char_Z);
+		gfx_setCursor(40, 121);
+		gfx_puts(volt);
+		lcd_show_frame();
+		// input_adc3 = read_adc_naiive(3);
+		// printf("ADC Channel 3 Value: %d\n", input_adc3);
         // display_xyz(vecs); //Mostrar X, Y, Z en consola
+		// msleep(2000);
 	}
 
 	return 0;
