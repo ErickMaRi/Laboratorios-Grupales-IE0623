@@ -6,15 +6,15 @@ import json
 import requests
 
 # Configuración del puerto serial (actualiza el puerto según corresponda)
-SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
-# SERIAL_PORT = '/dev/ttyUSB0'  # En Linux
-BAUD_RATE = 115200  
+# SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
+SERIAL_PORT = '/dev/ttyACM0'  # En Linux
+BAUD_RATE = 115200  # Asegúrate de que coincida con la configuración del microcontrolador
 
 # Configuración de ThingsBoard
-THINGSBOARD_HOST = 'thingsboard.io'
-ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplazar con el token de acceso del dispositivo
+THINGSBOARD_HOST = 'demo.thingsboard.io'
+ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplaza con el token de acceso del dispositivo
 
-# Inicia conexión serial
+# Inicializar conexión serial
 try:
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
     print(f"Conectado al puerto serial {SERIAL_PORT}")
@@ -42,7 +42,7 @@ def main():
             linea = ser.readline().decode('utf-8').strip()
             if linea:
                 print(f"Datos recibidos: {linea}")
-                # Suponiendo que los datos llegan en CSV: gyro_x,gyro_y,gyro_z,bateria
+                # Suponiendo que los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
                 datos = linea.split(',')
                 if len(datos) == 4:
                     telemetria = {

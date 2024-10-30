@@ -172,18 +172,12 @@ uint8_t read_reg(uint8_t command) {
 
 void read_xyz(int16_t vecs[3])
 {
-	char char_X[10];
 	read_reg(GYR_WHO_AM_I | 0x80);
 	read_reg(GYR_STATUS_REG | GYR_RNW);
 	
 	vecs[0] = read_reg(GYR_OUT_X_L | GYR_RNW) | read_reg(GYR_OUT_X_H | GYR_RNW) << 8;
 	vecs[1] = read_reg(GYR_OUT_Y_L | GYR_RNW) | read_reg(GYR_OUT_Y_H | GYR_RNW) << 8;
 	vecs[2] = read_reg(GYR_OUT_Z_L | GYR_RNW) | read_reg(GYR_OUT_Z_H | GYR_RNW) << 8;
-
-		sprintf(char_X, "%d", vecs[0]);
-		console_puts("vecs 0 :");
-		console_puts(char_X);
-		console_puts("\n");
 
 	for (int i=0; i < 4; i++ ){
 		vecs[i] = vecs[i]* L3GD20_SENSITIVITY_250DPS;
@@ -235,7 +229,7 @@ int print_decimal(int num)
 void lcd_main_structure(void){
 	gfx_init(lcd_draw_pixel, 240, 320);
 	gfx_fillScreen(LCD_WHITE);
-	gfx_setTextSize(2.5);
+	gfx_setTextSize(2);
 	gfx_setCursor(15, 25);
 	gfx_puts("Sismografo");
 	gfx_setTextSize(2);
@@ -247,18 +241,21 @@ void lcd_main_structure(void){
 	gfx_puts("Z:");
 	gfx_setCursor(15, 121);
 	gfx_puts("V:");
+	gfx_setCursor(15, 145);
+	gfx_puts("USART:");
 	// lcd_show_frame();
 }
 
 int main(void)
 {
-	char volt[20];
+	char volt[10];
 	float temp;
 	uint16_t input_adc3;
 	int16_t vecs[3];  // Almacena información de los ejes
 	char char_X[10];
     char char_Y[10];
     char char_Z[10];
+	char output[80];
 
 	clock_setup();     // Se inicializa el reloj
 	button_setup();
@@ -276,12 +273,6 @@ int main(void)
             usart_enabled = !usart_enabled;  // Toggle bandera
             msleep(300);  // Debounce delay
         }
-		if (usart_enabled) {
-            gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
-            msleep(500);
-        }else {
-            gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
-        }
 
 		read_xyz(vecs);  // Leer X, Y, Z
 		sprintf(char_X, "%d", vecs[0]);
@@ -289,7 +280,7 @@ int main(void)
         sprintf(char_Z, "%d", vecs[2]);
 
 		input_adc3 = read_adc_naiive(3);
-		printf("x = %d, y = %d, z = %d, adc3 = %u\n", vecs[0], vecs[1], vecs[2], input_adc3);
+		// printf("x = %d, y = %d, z = %d, adc3 = %u\n", vecs[0], vecs[1], vecs[2], input_adc3);
 		temp = input_adc3* 9.0f / 4095.0f;
 		sprintf(volt, "%2f", temp);
 		if (temp < 7) {
@@ -297,6 +288,27 @@ int main(void)
 		}
 
 		lcd_main_structure();
+		
+		
+		if (usart_enabled) {
+            gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
+			gfx_setCursor(100, 145);
+			gfx_puts("Activa");
+			sprintf(output, "%s,%s,%s,%s", char_X, char_Y, char_Z, volt);
+			console_puts(output);
+			msleep(500);
+
+        }else {
+            gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
+			gfx_setCursor(100, 145);
+			gfx_puts("Inactiva");
+        }
+
+		// sprintf(char_X, "%d", vecs[0]);
+		// console_puts("vecs 0 :");
+		// console_puts(char_X);
+		// console_puts("\n");
+
 		gfx_setTextSize(2);
 		gfx_setCursor(40, 49);
 		gfx_puts(char_X);
