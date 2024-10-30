@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "lcd-spi.h": "c",
+        "gfx.h": "c"
+    }
+}

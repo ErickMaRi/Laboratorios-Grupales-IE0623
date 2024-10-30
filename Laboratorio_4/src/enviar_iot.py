@@ -6,8 +6,8 @@ import json
 import requests
 
 # Configuración del puerto serial (actualiza el puerto según corresponda)
-SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
-# SERIAL_PORT = '/dev/ttyUSB0'  # En Linux
+# SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
+SERIAL_PORT = '/dev/ttyACM0'  # En Linux
 BAUD_RATE = 115200  # Asegúrate de que coincida con la configuración del microcontrolador
 
 # Configuración de ThingsBoard

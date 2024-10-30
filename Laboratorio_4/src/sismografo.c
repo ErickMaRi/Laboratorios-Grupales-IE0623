@@ -20,49 +20,79 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>  
+#include <math.h>
+#include <string.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/adc.h>
 #include "clock.h"
 #include "console.h"
+#include "sdram.h"
+#include "lcd-spi.h"
+#include "gfx.h"
 
-void setup_spi(void);
-uint16_t read_reg(int reg);
-uint8_t read_xyz(int16_t vecs[3]);
+#define L3GD20_SENSITIVITY_250DPS (0.00875F)
+#define GYR_RNW			(1 << 7) /* Write when zero */
+#define GYR_MNS			(1 << 6) /* Multiple reads when 1 */
+#define GYR_WHO_AM_I		0x0F
+#define GYR_OUT_TEMP		0x26
+#define GYR_STATUS_REG		0x27
+#define GYR_CTRL_REG1		0x20
+#define GYR_CTRL_REG1_PD	(1 << 3)
+#define GYR_CTRL_REG1_XEN	(1 << 1)
+#define GYR_CTRL_REG1_YEN	(1 << 0)
+#define GYR_CTRL_REG1_ZEN	(1 << 2)
+#define GYR_CTRL_REG1_BW_SHIFT	4
+#define GYR_CTRL_REG4		0x23
+#define GYR_CTRL_REG4_FS_SHIFT	4
+
+#define GYR_OUT_X_L		0x28
+#define GYR_OUT_X_H		0x29
+#define GYR_OUT_Y_L     0x2A
+#define GYR_OUT_Y_H     0x2B
+#define GYR_OUT_Z_L     0x2C
+#define GYR_OUT_Z_H     0x2D 
+
+static void setup_spi(void);  //////////
+uint8_t read_reg(uint8_t command); //////
+void write_reg(uint8_t reg, uint16_t value); ///////
+void read_xyz(int16_t vecs[3]);
 int print_decimal(int num);
-void display_xyz(int16_t vecs[3]);
+// void display_xyz(int16_t vecs[3]);
 static void usart_setup(void);
+void lcd_main_structure(void);
 
 volatile uint8_t usart_enabled = 0;
+static void setup_spi(void)
+{
+    rcc_periph_clock_enable(RCC_SPI5);  
+    rcc_periph_clock_enable(RCC_GPIOC); 
+    rcc_periph_clock_enable(RCC_GPIOF); 
+	
+	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,GPIO1);
+    gpio_set(GPIOC, GPIO1); // Establecer el pin GPIOC1 en alto
+	gpio_mode_setup(GPIOF, GPIO_MODE_AF, GPIO_PUPD_NONE,GPIO7 | GPIO8 | GPIO9);   
+    gpio_set_af(GPIOF, GPIO_AF5, GPIO7 | GPIO8 | GPIO9);
 
-void setup_spi(void){
-    //Habilitar el reloj
-    rcc_periph_clock_enable(RCC_SPI5);
-    rcc_periph_clock_enable(RCC_GPIOF | RCC_GPIOC);
+    // SPI5
+    spi_set_master_mode(SPI5);                  
+    spi_set_baudrate_prescaler(SPI5, SPI_CR1_BR_FPCLK_DIV_64); 
+    spi_set_clock_polarity_0(SPI5);             
+    spi_set_clock_phase_0(SPI5);                
+    spi_set_full_duplex_mode(SPI5);             
+    spi_set_unidirectional_mode(SPI5);          
+    spi_enable_software_slave_management(SPI5); 
+    spi_send_msb_first(SPI5);                   
+    spi_set_nss_high(SPI5);                     
+    SPI_I2SCFGR(SPI5) &= ~SPI_I2SCFGR_I2SMOD;   
+    spi_enable(SPI5);                           
 
-    //Habilitar pines de GPIO
-    gpio_mode_setup(GPIOF, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN,
-			GPIO7 | GPIO8 | GPIO9);
-	gpio_set_af(GPIOF, GPIO_AF5, GPIO7 | GPIO8 | GPIO9);
-	gpio_set_output_options(GPIOF, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ,
-				GPIO7 | GPIO9);
 
-    //Chip Select
-    gpio_set(GPIOC, GPIO1);
-	gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
-
-    //Inicializar y configurar SPI
-    spi_set_master_mode(SPI5);
-    spi_set_baudrate_prescaler(SPI5, SPI_CR1_BR_FPCLK_DIV_64);
-    spi_set_clock_polarity_0(SPI5);
-    spi_set_clock_phase_0(SPI5);
-    spi_set_full_duplex_mode(SPI5);
-    spi_set_unidirectional_mode(SPI5);
-    spi_enable_software_slave_management(SPI5);
-    spi_send_msb_first(SPI5);
-    spi_set_nss_high(SPI5);
-    spi_enable(SPI5);
+    write_reg(GYR_CTRL_REG1, GYR_CTRL_REG1_PD | GYR_CTRL_REG1_XEN | GYR_CTRL_REG1_YEN | GYR_CTRL_REG1_ZEN | (3 << GYR_CTRL_REG1_BW_SHIFT));
+    write_reg(GYR_CTRL_REG4, (1 << GYR_CTRL_REG4_FS_SHIFT));
 }
 
 static void gpio_setup(void)
@@ -87,7 +117,7 @@ static void button_setup(void)
 static void usart_setup(void)
 {
 	rcc_periph_clock_enable(RCC_USART1);
-	/* Setup USART2 parameters. */
+	/* Setup USART2 rcc_periph_clock_enableparameters. */
 	usart_set_baudrate(USART1, 115200);
 	usart_set_databits(USART1, 8);
 	usart_set_stopbits(USART1, USART_STOPBITS_1);
@@ -99,44 +129,59 @@ static void usart_setup(void)
 	usart_enable(USART1);
 }
 
-uint16_t read_reg(int reg)
+static void adc_setup(void)
 {
-	uint16_t d1, d2;
-
-	d1 = 0x80 | (reg & 0x3f); /* Read operation */
-	/* Nominallly a register read is a 16 bit operation */
-	gpio_clear(GPIOC, GPIO1);
-	spi_send(SPI5, d1);
-	d2 = spi_read(SPI5);
-	d2 <<= 8;
-	/*
-	 * You have to send as many bits as you want to read
-	 * so we send another 8 bits to get the rest of the
-	 * register.
-	 */
-	spi_send(SPI5, 0);
-	d2 |= spi_read(SPI5);
-	gpio_set(GPIOC, GPIO1);
-	return d2;
+	rcc_periph_clock_enable(RCC_ADC1);
+	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO3);
+	adc_power_off(ADC1);
+	adc_disable_scan_mode(ADC1);
+	adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_3CYC);
+	adc_power_on(ADC1);
 }
 
-uint8_t read_xyz(int16_t vecs[3])
-{
-	uint8_t	 buf[7];
-	int		 i;
-
+void write_reg(uint8_t reg, uint16_t value){
 	gpio_clear(GPIOC, GPIO1); /* CS* select */
-	spi_send(SPI5, 0xc0 | 0x28);
+	spi_send(SPI5, reg);
 	(void) spi_read(SPI5);
-	for (i = 0; i < 6; i++) {
-		spi_send(SPI5, 0);
-		buf[i] = spi_read(SPI5);
-	}
+	spi_send(SPI5, value);
+	(void) spi_read(SPI5);
 	gpio_set(GPIOC, GPIO1); /* CS* deselect */
-	vecs[0] = (buf[1] << 8 | buf[0]);
-	vecs[1] = (buf[3] << 8 | buf[2]);
-	vecs[2] = (buf[5] << 8 | buf[4]);
-	return read_reg(0x27); /* Status register */
+}
+
+
+static uint16_t read_adc_naiive(uint8_t channel)
+{
+	uint8_t channel_array[16];
+	channel_array[0] = channel;
+	adc_set_regular_sequence(ADC1, 1, channel_array);
+	adc_start_conversion_regular(ADC1);
+	while (!adc_eoc(ADC1));
+	uint16_t reg16 = adc_read_regular(ADC1);
+	return reg16;
+}
+uint8_t read_reg(uint8_t command) {
+    gpio_clear(GPIOC, GPIO1);        
+    spi_send(SPI5, command);         
+    spi_read(SPI5);                  
+    spi_send(SPI5, 0);                 
+    uint8_t result = spi_read(SPI5);   
+    gpio_set(GPIOC, GPIO1);            
+    return result;                     
+}
+
+
+void read_xyz(int16_t vecs[3])
+{
+	read_reg(GYR_WHO_AM_I | 0x80);
+	read_reg(GYR_STATUS_REG | GYR_RNW);
+	
+	vecs[0] = read_reg(GYR_OUT_X_L | GYR_RNW) | read_reg(GYR_OUT_X_H | GYR_RNW) << 8;
+	vecs[1] = read_reg(GYR_OUT_Y_L | GYR_RNW) | read_reg(GYR_OUT_Y_H | GYR_RNW) << 8;
+	vecs[2] = read_reg(GYR_OUT_Z_L | GYR_RNW) | read_reg(GYR_OUT_Z_H | GYR_RNW) << 8;
+
+	for (int i=0; i < 4; i++ ){
+		vecs[i] = vecs[i]* L3GD20_SENSITIVITY_250DPS;
+	}
 }
 
 int print_decimal(int num)
@@ -167,30 +212,60 @@ int print_decimal(int num)
 	return len; /* number of characters printed */
 }
 
-void display_xyz(int16_t vecs[3]){
-	console_puts("X: ");
-	print_decimal(vecs[0]);  
-	console_puts("\n");
+// void display_xyz(int16_t vects[3]){
+// 	console_puts("X: ");
+// 	print_decimal(vects[0]);  
+// 	console_puts("\n");
 
-	console_puts("Y: ");
-	print_decimal(vecs[1]);  
-	console_puts("\n");
+// 	console_puts("Y: ");
+// 	print_decimal(vects[1]);  
+// 	console_puts("\n");
 
-	console_puts("Z: ");
-	print_decimal(vecs[2]);  
-	console_puts("\n\n");
+// 	console_puts("Z: ");
+// 	print_decimal(vects[2]);  
+// 	console_puts("\n\n");
+// }
+
+void lcd_main_structure(void){
+	gfx_init(lcd_draw_pixel, 240, 320);
+	gfx_fillScreen(LCD_WHITE);
+	gfx_setTextSize(2);
+	gfx_setCursor(15, 25);
+	gfx_puts("Sismografo");
+	gfx_setTextSize(2);
+	gfx_setCursor(15, 49);
+	gfx_puts("X:");
+	gfx_setCursor(15, 73);
+	gfx_puts("Y:");
+	gfx_setCursor(15, 97);
+	gfx_puts("Z:");
+	gfx_setCursor(15, 121);
+	gfx_puts("V:");
+	gfx_setCursor(15, 145);
+	gfx_puts("USART:");
+	// lcd_show_frame();
 }
 
 int main(void)
 {
-    int16_t vecs[3];  // Almacena información de los ejes
+	char volt[10];
+	float temp;
+	uint16_t input_adc3;
+	int16_t vecs[3];  // Almacena información de los ejes
+	char char_X[10];
+    char char_Y[10];
+    char char_Z[10];
+	char output[80];
+
 	clock_setup();     // Se inicializa el reloj
 	button_setup();
 	gpio_setup();
 	setup_spi();       //  Se inicializa SPI5
 	usart_setup();
+	adc_setup();
 	console_setup(115200);  // Se inicializa la consola
-
+	sdram_init();
+	lcd_spi_init();
 	// console_puts("Leyendo Gyroscopio...\n");
 
 	while (1) {
@@ -198,15 +273,56 @@ int main(void)
             usart_enabled = !usart_enabled;  // Toggle bandera
             msleep(300);  // Debounce delay
         }
+
+		read_xyz(vecs);  // Leer X, Y, Z
+		sprintf(char_X, "%d", vecs[0]);
+        sprintf(char_Y, "%d", vecs[1]);
+        sprintf(char_Z, "%d", vecs[2]);
+
+		input_adc3 = read_adc_naiive(3);
+		// printf("x = %d, y = %d, z = %d, adc3 = %u\n", vecs[0], vecs[1], vecs[2], input_adc3);
+		temp = input_adc3* 9.0f / 4095.0f;
+		sprintf(volt, "%2f", temp);
+		if (temp < 7) {
+			gpio_toggle(GPIOG, GPIO14);
+		}
+
+		lcd_main_structure();
+		
+		
 		if (usart_enabled) {
             gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
-			// display_xyz(vecs); //Mostrar X, Y, Z en consola
-            msleep(500);
+			gfx_setCursor(100, 145);
+			gfx_puts("Activa");
+			sprintf(output, "%s,%s,%s,%s", char_X, char_Y, char_Z, volt);
+			console_puts(output);
+			msleep(500);
+
         }else {
             gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
+			gfx_setCursor(100, 145);
+			gfx_puts("Inactiva");
         }
-		read_xyz(vecs);  // Leer X, Y, Z
+
+		// sprintf(char_X, "%d", vecs[0]);
+		// console_puts("vecs 0 :");
+		// console_puts(char_X);
+		// console_puts("\n");
+
+		gfx_setTextSize(2);
+		gfx_setCursor(40, 49);
+		gfx_puts(char_X);
+		gfx_setCursor(40, 73);
+		gfx_puts(char_Y);
+		gfx_setCursor(40, 97);
+		gfx_puts(char_Z);
+		gfx_setCursor(40, 121);
+		gfx_puts(volt);
+		lcd_show_frame();
+		// input_adc3 = read_adc_naiive(3);
+		// printf("ADC Channel 3 Value: %d\n", input_adc3);
         // display_xyz(vecs); //Mostrar X, Y, Z en consola
+		msleep(200);
 	}
 
 	return 0;
