@@ -23,7 +23,7 @@ except serial.SerialException as e:
     exit(1)
 
 # URL de la API de ThingsBoard
-url = f"http://{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
+url = f"https://{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
 
 def enviar_datos_thingsboard(telemetria):
     headers = {'Content-Type': 'application/json'}
