@@ -294,7 +294,7 @@ int main(void)
             gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
 			gfx_setCursor(100, 145);
 			gfx_puts("Activa");
-			sprintf(output, "%s,%s,%s,%s", char_X, char_Y, char_Z, volt);
+			sprintf(output, "%s,%s,%s,%s\n", char_X, char_Y, char_Z, volt);
 			console_puts(output);
 			msleep(500);
 
