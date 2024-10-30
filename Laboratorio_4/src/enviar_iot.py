@@ -4,12 +4,12 @@ import json
 import requests
 
 # Configuración del puerto serial (actualiza el puerto según corresponda)
-SERIAL_PORT = '/dev/ttyACM0'  # Actualiza según corresponda (ejemplo para Linux)
-BAUD_RATE = 115200  # Asegúrate de que coincida con la configuración del microcontrolador
+SERIAL_PORT = '/dev/ttyACM0'  
+BAUD_RATE = 115200  
 
 # Configuración de ThingsBoard
-THINGSBOARD_HOST = 'https://thingsboard.cloud'  # URL base correcta de tu instancia
-ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplaza con el token de acceso del dispositivo
+THINGSBOARD_HOST = 'https://thingsboard.cloud'  
+ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  
 
 # Inicializar conexión serial
 try:
@@ -39,7 +39,7 @@ def main():
             linea = ser.readline().decode('utf-8').strip()
             if linea:
                 print(f"Datos recibidos: {linea}")
-                # Suponiendo que los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
+                # Los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
                 datos = linea.split(',')
                 if len(datos) == 4:
                     try:
