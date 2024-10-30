@@ -2332,10 +2332,10 @@ END GROUP
  .rodata.lcd_main_structure.str1.1
                 0x0000000008008a46       0x1e sismografo.o
  .rodata.main.str1.1
-                0x0000000008008a64       0x23 sismografo.o
+                0x0000000008008a64       0x24 sismografo.o
  .rodata.CSWTCH.4
-                0x0000000008008a87        0x3 ../../../../../libopencm3//lib/libopencm3_stm32f4.a(fmc_common_f47.o)
- *fill*         0x0000000008008a8a        0x2 
+                0x0000000008008a88        0x3 ../../../../../libopencm3//lib/libopencm3_stm32f4.a(fmc_common_f47.o)
+ *fill*         0x0000000008008a8b        0x1 
  .rodata.rcc_hse_8mhz_3v3
                 0x0000000008008a8c       0x70 ../../../../../libopencm3//lib/libopencm3_stm32f4.a(rcc.o)
                 0x0000000008008a8c                rcc_hse_8mhz_3v3
