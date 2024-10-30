@@ -11,7 +11,7 @@ SERIAL_PORT = 'COM3'  # En Windows, puede ser COM3, COM4, etc.
 BAUD_RATE = 115200  
 
 # Configuración de ThingsBoard
-THINGSBOARD_HOST = 'demo.thingsboard.io'
+THINGSBOARD_HOST = 'thingsboard.io'
 ACCESS_TOKEN = 'elzMPhnOoIIf8rJ5u5ZA'  # Reemplazar con el token de acceso del dispositivo
 
 # Inicia conexión serial
