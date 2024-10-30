@@ -201,26 +201,26 @@ initialize_display(const struct tft_command cmds[])
 	 * that changes the pointer we send to the command function.
 	 */
 	while (cmds[i].cmd) {
-		console_puts("CMD: ");
+		// console_puts("CMD: ");
 		print_hex(cmds[i].cmd);
-		console_puts(", ");
+		// console_puts(", ");
 		if (cmds[i].n_args) {
-			console_puts("ARGS: ");
+			// console_puts("ARGS: ");
 			for (j = 0; j < cmds[i].n_args; j++) {
 				print_hex(cmd_args[arg_offset+j]);
-				console_puts(", ");
+				// console_puts(", ");
 			}
 		}
-		console_puts("DELAY: ");
+		// console_puts("DELAY: ");
 		print_decimal(cmds[i].delay);
-		console_puts("ms\n");
+		// console_puts("ms\n");
 
 		lcd_command(cmds[i].cmd, cmds[i].delay, cmds[i].n_args,
 			&cmd_args[arg_offset]);
 		arg_offset += cmds[i].n_args;
 		i++;
 	}
-	console_puts("Done.\n");
+	// console_puts("Done.\n");
 }
 
 /* prototype for test_image */
@@ -335,15 +335,15 @@ lcd_spi_init(void)
 	spi_enable(LCD_SPI);
 
 	/* Set up the display */
-	console_puts("Initialize the display.\n");
+	// console_puts("Initialize the display.\n");
 	initialize_display(initialization);
 
 	/* create a test image */
-	console_puts("Generating Test Image\n");
+	// console_puts("Generating Test Image\n");
 	test_image();
 
 	/* display it on the LCD */
-	console_puts("And ... voila\n");
+	// console_puts("And ... voila\n");
 	lcd_show_frame();
 }
 
@@ -400,7 +400,7 @@ static int print_hex(int v)
 		v = (v >> 4) & 0x0fffffff;
 	} while (v != 0);
 	ndx--;
-	console_puts("0x");
+	// console_puts("0x");
 	len = 2;
 	while (buf[ndx] != '\000') {
 		console_putc(buf[ndx--]);
