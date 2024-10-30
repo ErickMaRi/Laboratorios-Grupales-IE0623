@@ -40,8 +40,10 @@ def main():
             if linea:
                 print(f"Datos recibidos: {linea}")
                 # Los datos llegan en formato CSV: gyro_x,gyro_y,gyro_z,bateria
-                datos = linea.split(',')
-                if len(datos) == 4:
+                datos = [d.strip() for d in linea.split(',')]
+                
+                # Verificar que hay exactamente 4 campos y que ninguno está vacío
+                if len(datos) == 4 and all(d != '' for d in datos):
                     try:
                         telemetria = {
                             'gyro_x': float(datos[0]),
@@ -53,7 +55,7 @@ def main():
                     except ValueError as e:
                         print(f"Error al convertir datos a float: {e}")
                 else:
-                    print("Formato de datos incorrecto")
+                    print("Formato de datos incorrecto o campos vacíos")
             time.sleep(0.1)
         except UnicodeDecodeError as e:
             print(f"Error de decodificación: {e}")
