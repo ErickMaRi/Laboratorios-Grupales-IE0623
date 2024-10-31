@@ -47,7 +47,7 @@ def main():
                             'gyro_x': float(datos[0]),
                             'gyro_y': float(datos[1]),
                             'gyro_z': float(datos[2]),
-                            'bateria': (50)*(float(datos[3])-7) 
+                            'bateria': (50)*(float(datos[3])-7)
                         }
                         enviar_datos_thingsboard(telemetria)
                     except ValueError as e:

@@ -34,6 +34,7 @@
 #include "lcd-spi.h"
 #include "gfx.h"
 
+//Definiciones para configurar SPI
 #define L3GD20_SENSITIVITY_250DPS (0.00875F)
 #define GYR_RNW			(1 << 7) /* Write when zero */
 #define GYR_MNS			(1 << 6) /* Multiple reads when 1 */
@@ -48,7 +49,7 @@
 #define GYR_CTRL_REG1_BW_SHIFT	4
 #define GYR_CTRL_REG4		0x23
 #define GYR_CTRL_REG4_FS_SHIFT	4
-
+//Utilizados para leer XYZ
 #define GYR_OUT_X_L		0x28
 #define GYR_OUT_X_H		0x29
 #define GYR_OUT_Y_L     0x2A
@@ -56,18 +57,19 @@
 #define GYR_OUT_Z_L     0x2C
 #define GYR_OUT_Z_H     0x2D 
 
-static void setup_spi(void);  //////////
-uint8_t read_reg(uint8_t command); //////
-void write_reg(uint8_t reg, uint16_t value); ///////
+static void setup_spi(void);  
+uint8_t read_reg(uint8_t command); 
+void write_reg(uint8_t reg, uint16_t value); 
 void read_xyz(int16_t vecs[3]);
 int print_decimal(int num);
-// void display_xyz(int16_t vecs[3]);
 static void usart_setup(void);
 void lcd_main_structure(void);
-
+//Variables globales
 volatile uint8_t usart_enabled = 0;
+
 static void setup_spi(void)
 {
+	//Configuración e inicialización para SPI
     rcc_periph_clock_enable(RCC_SPI5);  
     rcc_periph_clock_enable(RCC_GPIOC); 
     rcc_periph_clock_enable(RCC_GPIOF); 
@@ -90,23 +92,27 @@ static void setup_spi(void)
     SPI_I2SCFGR(SPI5) &= ~SPI_I2SCFGR_I2SMOD;   
     spi_enable(SPI5);                           
 
-
+	//Escribir a registros
     write_reg(GYR_CTRL_REG1, GYR_CTRL_REG1_PD | GYR_CTRL_REG1_XEN | GYR_CTRL_REG1_YEN | GYR_CTRL_REG1_ZEN | (3 << GYR_CTRL_REG1_BW_SHIFT));
     write_reg(GYR_CTRL_REG4, (1 << GYR_CTRL_REG4_FS_SHIFT));
 }
 
 static void gpio_setup(void)
 {
+	//Configuración e inicialización de GPIOs
 	/* Enable GPIOG clock. */
 	rcc_periph_clock_enable(RCC_GPIOG);
 
 	/* Set GPIO13 (in GPIO port G) to 'output push-pull'. */
 	gpio_mode_setup(GPIOG, GPIO_MODE_OUTPUT,
 			GPIO_PUPD_NONE, GPIO13);
+	gpio_mode_setup(GPIOG, GPIO_MODE_OUTPUT, 
+			GPIO_PUPD_NONE, GPIO14);
 }
 
 static void button_setup(void)
 {
+	//Configuración e inicialización para botones
 	/* Enable GPIOA clock. */
 	rcc_periph_clock_enable(RCC_GPIOA);
 
@@ -116,6 +122,7 @@ static void button_setup(void)
 
 static void usart_setup(void)
 {
+	//Configuración e inicialización para USART
 	rcc_periph_clock_enable(RCC_USART1);
 	/* Setup USART2 rcc_periph_clock_enableparameters. */
 	usart_set_baudrate(USART1, 115200);
@@ -131,6 +138,7 @@ static void usart_setup(void)
 
 static void adc_setup(void)
 {
+	//Configuración e inicialización para ADC
 	rcc_periph_clock_enable(RCC_ADC1);
 	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO3);
 	adc_power_off(ADC1);
@@ -140,17 +148,19 @@ static void adc_setup(void)
 }
 
 void write_reg(uint8_t reg, uint16_t value){
-	gpio_clear(GPIOC, GPIO1); /* CS* select */
+	//Escribir a registro, utilizado para el giroscopio.
+	gpio_clear(GPIOC, GPIO1);
 	spi_send(SPI5, reg);
 	(void) spi_read(SPI5);
 	spi_send(SPI5, value);
 	(void) spi_read(SPI5);
-	gpio_set(GPIOC, GPIO1); /* CS* deselect */
+	gpio_set(GPIOC, GPIO1); 
 }
 
 
 static uint16_t read_adc_naiive(uint8_t channel)
 {
+	//Leer entrada de ADC
 	uint8_t channel_array[16];
 	channel_array[0] = channel;
 	adc_set_regular_sequence(ADC1, 1, channel_array);
@@ -160,6 +170,7 @@ static uint16_t read_adc_naiive(uint8_t channel)
 	return reg16;
 }
 uint8_t read_reg(uint8_t command) {
+	//Leer registro, utilizado para el giroscopio.
     gpio_clear(GPIOC, GPIO1);        
     spi_send(SPI5, command);         
     spi_read(SPI5);                  
@@ -169,9 +180,9 @@ uint8_t read_reg(uint8_t command) {
     return result;                     
 }
 
-
 void read_xyz(int16_t vecs[3])
 {
+	//Leer XYZ, utilizado para el giroscopio.
 	read_reg(GYR_WHO_AM_I | 0x80);
 	read_reg(GYR_STATUS_REG | GYR_RNW);
 	
@@ -209,29 +220,17 @@ int print_decimal(int num)
 		console_putc(buf[ndx--]);
 		len++;
 	}
-	return len; /* number of characters printed */
+	return len; 
 }
 
-// void display_xyz(int16_t vects[3]){
-// 	console_puts("X: ");
-// 	print_decimal(vects[0]);  
-// 	console_puts("\n");
-
-// 	console_puts("Y: ");
-// 	print_decimal(vects[1]);  
-// 	console_puts("\n");
-
-// 	console_puts("Z: ");
-// 	print_decimal(vects[2]);  
-// 	console_puts("\n\n");
-// }
-
 void lcd_main_structure(void){
+	//Estructura principal de la pantalla
+	//Se separa para no cargarlo múltiples veces
 	gfx_init(lcd_draw_pixel, 240, 320);
 	gfx_fillScreen(LCD_WHITE);
 	gfx_setTextSize(2);
 	gfx_setCursor(15, 25);
-	gfx_puts("Sismografo");
+	gfx_puts("Sismografo"); //Sin tilde, no lo acepta
 	gfx_setTextSize(2);
 	gfx_setCursor(15, 49);
 	gfx_puts("X:");
@@ -243,20 +242,20 @@ void lcd_main_structure(void){
 	gfx_puts("V:");
 	gfx_setCursor(15, 145);
 	gfx_puts("USART:");
-	// lcd_show_frame();
 }
 
 int main(void)
 {
-	char volt[10];
-	float temp;
-	uint16_t input_adc3;
+	char volt[10]; //Voltaje de la batería
+	float temp;		//Voltaje de la batería 
+	uint16_t input_adc3;	//Entrada de ADC
 	int16_t vecs[3];  // Almacena información de los ejes
-	char char_X[10];
-    char char_Y[10];
-    char char_Z[10];
-	char output[80];
+	char char_X[10]; 	//Valor de eje X
+    char char_Y[10]; 	//Valor de eje Y
+    char char_Z[10]; 	//Valor de eje Z
+	char output[80];	//Salida por serial
 
+//Se inicializa el sistema
 	clock_setup();     // Se inicializa el reloj
 	button_setup();
 	gpio_setup();
@@ -266,30 +265,33 @@ int main(void)
 	console_setup(115200);  // Se inicializa la consola
 	sdram_init();
 	lcd_spi_init();
-	// console_puts("Leyendo Gyroscopio...\n");
 
 	while (1) {
+		//Detectar si se presiona botón
 		if (gpio_get(GPIOA, GPIO0)) {
             usart_enabled = !usart_enabled;  // Toggle bandera
             msleep(300);  // Debounce delay
         }
-
+		// Leer XYZ
 		read_xyz(vecs);  // Leer X, Y, Z
 		sprintf(char_X, "%d", vecs[0]);
         sprintf(char_Y, "%d", vecs[1]);
         sprintf(char_Z, "%d", vecs[2]);
-
+		//Leer ADC
 		input_adc3 = read_adc_naiive(3);
-		// printf("x = %d, y = %d, z = %d, adc3 = %u\n", vecs[0], vecs[1], vecs[2], input_adc3);
 		temp = input_adc3* 9.0f / 4095.0f;
-		sprintf(volt, "%2f", temp);
-		if (temp < 7) {
+		sprintf(volt, "%.2f", temp);
+		//Activar alarma de batería
+		if (temp < 7.5) {
 			gpio_toggle(GPIOG, GPIO14);
+			msleep(500);
+		} else {
+			gpio_clear(GPIOG, GPIO14);
 		}
 
+		//Impresión en pantalla
 		lcd_main_structure();
-		
-		
+		//Comunicación serial
 		if (usart_enabled) {
             gpio_toggle(GPIOG, GPIO13);  // encender y apagar el LED
 			gfx_setCursor(100, 145);
@@ -297,18 +299,13 @@ int main(void)
 			sprintf(output, "%s,%s,%s,%s\n", char_X, char_Y, char_Z, volt);
 			console_puts(output);
 			msleep(500);
-
         }else {
             gpio_clear(GPIOG, GPIO13);  // Asegurarse de que el LED esté apagado
 			gfx_setCursor(100, 145);
 			gfx_puts("Inactiva");
         }
 
-		// sprintf(char_X, "%d", vecs[0]);
-		// console_puts("vecs 0 :");
-		// console_puts(char_X);
-		// console_puts("\n");
-
+		//Impresión en pantalla
 		gfx_setTextSize(2);
 		gfx_setCursor(40, 49);
 		gfx_puts(char_X);
@@ -319,9 +316,6 @@ int main(void)
 		gfx_setCursor(40, 121);
 		gfx_puts(volt);
 		lcd_show_frame();
-		// input_adc3 = read_adc_naiive(3);
-		// printf("ADC Channel 3 Value: %d\n", input_adc3);
-        // display_xyz(vecs); //Mostrar X, Y, Z en consola
 		msleep(200);
 	}
 
