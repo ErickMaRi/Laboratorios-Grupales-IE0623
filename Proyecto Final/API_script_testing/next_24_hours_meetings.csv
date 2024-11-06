@@ -1,0 +1,6 @@
+Start,End,Summary,Description,Location,Attendees
+2024-11-06T04:00:00-06:00,2024-11-06T05:30:00-06:00,current meet test,No Description,No Location,No Attendees
+2024-11-06T08:00:00-06:00,2024-11-06T09:00:00-06:00,Clase A,No Description,No Location,No Attendees
+2024-11-06T10:00:00-06:00,2024-11-06T12:00:00-06:00,Evento B,No Description,No Location,No Attendees
+2024-11-06T14:00:00-06:00,2024-11-06T15:00:00-06:00,abc,generic description,"WXP4+X4G Ciudad universitaria Rodrigo Facio Brenes, Ciudad de la Investigacion, San José, San Pedro","christabel.alvarado@gmail.com, test.micros.2024@gmail.com"
+2024-11-06T16:45:00-06:00,2024-11-06T17:45:00-06:00,Evento con muchas letras para probar el manejo de las lineas largas.,No Description,No Location,No Attendees
