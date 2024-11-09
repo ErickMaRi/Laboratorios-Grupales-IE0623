@@ -14,8 +14,8 @@ BAUDRATE = 115200
 TIMEOUT = 1
 
 # Parámetros
-SAMPLE_RATE = 50  # Frecuencia de muestreo en Hz
-BUFFER_SIZE = SAMPLE_RATE * 3  # Buffer para 3 segundos de datos
+SAMPLE_RATE = 100  # Frecuencia de muestreo en Hz
+BUFFER_SIZE = SAMPLE_RATE * 1  # Buffer para 3 segundos de datos
 
 # Buffers para los datos
 ax_data = deque([0.0]*BUFFER_SIZE, maxlen=BUFFER_SIZE)

@@ -1,7 +1,7 @@
 #include <Arduino_LSM9DS1.h>
 
 const int buttonPin = 2;  // Pin del botón
-const int sampleRate = 50;  // Frecuencia de muestreo en Hz
+const int sampleRate = 100;  // Frecuencia de muestreo en Hz
 
 bool lastButtonState = HIGH;
 unsigned long lastDebounceTime = 0;
