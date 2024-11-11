@@ -1,6 +1,8 @@
 import datetime
-import os.path
 import csv
+import os.path
+import requests
+import json
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,6 +12,36 @@ from googleapiclient.errors import HttpError
 
 # Define the scope
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+# ThingsBoard configuration
+THINGSBOARD_HOST = 'https://iot.eie.ucr.ac.cr/'
+ACCESS_TOKEN = '06hyrjcbtwq2n5lrxzsv'
+url = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
+headers = {'Content-Type': 'application/json'}
+
+def enviar_datos_thingsboard(telemetria):
+    try:
+        response = requests.post(url, data=json.dumps(telemetria), headers=headers)
+        if response.status_code == 200:
+            print("Data sent successfully to ThingsBoard")
+        else:
+            print(f"Error sending data: {response.status_code} {response.text}")
+    except Exception as e:
+        print(f"Exception sending data: {e}")
+
+def send_calendar_data_to_thingsboard(csv_file_path):
+    # Read the CSV file and send data to ThingsBoard
+    with open(csv_file_path, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            telemetry_data = {
+                "start": row["Start"],
+                "end": row["End"],
+                "summary": row["Summary"],
+                "description": row["Description"],
+                "location": row["Location"],
+                "attendees": row["Attendees"]
+            }
+            enviar_datos_thingsboard(telemetry_data)
 
 def main():
     """Retrieve meetings from Google Calendar starting now and for the next 24 hours, saving them in a CSV file."""
@@ -75,6 +107,8 @@ def main():
                 writer.writerow([start, end, summary, description, location, attendees])
 
         print("next_24_hours_meetings.csv created")
+        csv_file_path = "next_24_hours_meetings.csv" 
+        send_calendar_data_to_thingsboard(csv_file_path)
 
     except HttpError as error:
         print(f"An error occurred: {error}")
