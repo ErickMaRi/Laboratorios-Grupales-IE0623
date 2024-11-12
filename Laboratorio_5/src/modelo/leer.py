@@ -43,8 +43,8 @@ def preparar_datos():
         inputs.extend(matriz_datos)
         outputs.extend(identificador_archivos)
 
-    inputs = np.array(inputs)
-    outputs = np.array(outputs)
+    inputs = np.array(inputs, dtype=float)
+    outputs = np.array(outputs, dtype=float)
     
     # Random shuffle
     indices = np.arange(len(inputs))
@@ -62,11 +62,36 @@ def preparar_datos():
 
     return x_train, y_train, x_val, y_val, x_test, y_test
 
+def crear_modelo():
+    modelo = tf.keras.models.Sequential([
+        tf.keras.layers.Dense(64, activation='relu', input_shape=(300,)),
+        tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dense(3, activation='softmax')  # Three outputs for the three types of movement
+    ])
+
+    modelo.compile(optimizer='rmsprop',
+                   loss='mae',
+                   metrics=['accuracy'])
+    return modelo
+    
 def main():
-    # Preparar datos
-    x_train, y_train, x_val, y_val, x_test, y_test = preparar_datos()
+    from re import X
+    # Prepare data
+    input_train, output_train, input_val, output_val, input_test, output_test = preparar_datos()
 
+    # Uncomment the following lines if you want to train and save the model
+    # model = crear_modelo()
+    # model.fit(x_train, y_train, epochs=20, validation_data=(x_val, y_val))
+    # test_loss, test_acc = model.evaluate(x_test, y_test)
+    # print(f"Test accuracy: {test_acc}")
 
+    # Convert model to TensorFlow Lite
+    # converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    # tflite_model = converter.convert()
+    # with open('/content/drive/MyDrive/modelo_movimiento.tflite', 'wb') as f:
+    #     f.write(tflite_model)
+    # print("Model saved as 'modelo_movimiento.tflite' in Google Drive")
+    print(input_test)
 
 if __name__ == "__main__":
     main()
