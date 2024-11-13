@@ -3,6 +3,7 @@ import csv
 import os.path
 import requests
 import json
+import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -18,6 +19,11 @@ ACCESS_TOKEN = '06hyrjcbtwq2n5lrxzsv'
 url = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
 headers = {'Content-Type': 'application/json'}
 
+
+def encode_csv_to_base64(csv_file_path):
+    with open(csv_file_path, "rb") as file:
+        return base64.b64encode(file.read()).decode("utf-8")
+
 def enviar_datos_thingsboard(telemetria):
     try:
         response = requests.post(url, data=json.dumps(telemetria), headers=headers)
@@ -29,19 +35,13 @@ def enviar_datos_thingsboard(telemetria):
         print(f"Exception sending data: {e}")
 
 def send_calendar_data_to_thingsboard(csv_file_path):
-    # Read the CSV file and send data to ThingsBoard
-    with open(csv_file_path, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            telemetry_data = {
-                "start": row["Start"],
-                "end": row["End"],
-                "summary": row["Summary"],
-                "description": row["Description"],
-                "location": row["Location"],
-                "attendees": row["Attendees"]
-            }
-            enviar_datos_thingsboard(telemetry_data)
+    # Encode the CSV file as a base64 string
+    encoded_csv = encode_csv_to_base64(csv_file_path)
+    telemetry_data = {
+        "file": encoded_csv,  # Send as "file" in ThingsBoard
+        "filename": "next_24_hours_meetings.csv"
+    }
+    enviar_datos_thingsboard(telemetry_data)
 
 def main():
     """Retrieve meetings from Google Calendar starting now and for the next 24 hours, saving them in a CSV file."""
@@ -107,8 +107,9 @@ def main():
                 writer.writerow([start, end, summary, description, location, attendees])
 
         print("next_24_hours_meetings.csv created")
-        csv_file_path = "next_24_hours_meetings.csv" 
+        csv_file_path = "next_24_hours_meetings.csv"
         send_calendar_data_to_thingsboard(csv_file_path)
+
 
     except HttpError as error:
         print(f"An error occurred: {error}")
