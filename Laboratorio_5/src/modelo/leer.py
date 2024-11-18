@@ -33,7 +33,7 @@ def preparar_datos():
     SEED = 42
     np.random.seed(SEED)
     tf.random.set_seed(SEED)
-    carpetas = ['arriba', 'jalar', 'girar muñeca clockwise']
+    carpetas = ['arriba', 'jalar', 'revés']
     inputs = []
     outputs = []
 
@@ -42,8 +42,6 @@ def preparar_datos():
         matriz_datos, identificador_archivos = leer_datos(carpeta, i)
         inputs.extend(matriz_datos)
         outputs.extend(identificador_archivos)
-
-
 
     num_max = max([max([max([abs(float(data)) for data in point])] for point in input) for input in inputs])[0]
     print("max accelaration:", num_max)
@@ -76,8 +74,10 @@ def preparar_datos():
 
 def crear_modelo():
     modelo = tf.keras.models.Sequential([
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(64, activation='relu'),
-        tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dropout(0.3),
         tf.keras.layers.Dense(3, activation='softmax')  # Three outputs for the three types of movement
     ])
 
@@ -85,12 +85,8 @@ def crear_modelo():
     return modelo
     
 def main():
-    from re import X
     # Prepare data
-
     input_train, output_train, input_val, output_val, input_test, output_test = preparar_datos()
-    print(len(input_val))
-    print(len(output_val))
 
     model = crear_modelo()
     model.fit(input_train, output_train, epochs=100, validation_data=(input_val, output_val))
@@ -98,13 +94,34 @@ def main():
     print(f"Test loss: {test_loss}")
     print(f"Test accuracy: {test_acc}")
 
+
+    # Obtener predicciones y calcular la matriz de confusión
+    y_prediction = model.predict(input_test)
+    y_prediction = np.argmax(y_prediction, axis=1)
+    y_test = np.argmax(output_test, axis=1)
+
+    # Crear matriz de confusión y normalizar por columnas
+    conf_matrix = tf.math.confusion_matrix(y_test, y_prediction)
+    conf_matrix = tf.cast(conf_matrix, dtype=tf.float32)
+    conf_matrix_normalized = conf_matrix / tf.reduce_sum(conf_matrix, axis=0)
+
+    # Imprimir la matriz de confusión normalizada
+    print("Matriz de Confusión Normalizada:\n", conf_matrix_normalized)
+
+
     # Convert model to TensorFlow Lite
-    # converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    # tflite_model = converter.convert()
-    # with open('/content/drive/MyDrive/modelo_movimiento.tflite', 'wb') as f:
-    #     f.write(tflite_model)
-    # print("Model saved as 'modelo_movimiento.tflite' in Google Drive")
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = converter.convert()
+    with open('/content/drive/MyDrive/modelo_movimiento.tflite', 'wb') as f:
+        f.write(tflite_model)
+    print("Model saved as 'modelo_movimiento.tflite' in Google Drive")
     print(input_test)
+
+    # !echo "const unsigned char model[] = {" > /content/model.h
+    # !cat /content/drive/MyDrive/modelo_movimiento.tflite | xxd -i      >> /content/model.h
+    # !echo "};"                              >> /content/model.h
+
+    # print("\nDone")
 
 if __name__ == "__main__":
     main()
