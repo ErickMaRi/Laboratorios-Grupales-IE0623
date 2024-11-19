@@ -80,14 +80,35 @@ void loop() {
         return;
       }
 
-      // Mostrar resultados de clasificación
-      Serial.println("Movimiento detectado:");
+       // Mostrar resultados de clasificación
+       Serial.println("Movimiento detectado:");
+       for (int i = 0; i < NUM_MOVIMIENTOS; i++) {
+         Serial.print(MOVIMIENTOS[i]);
+         Serial.print(": ");
+         Serial.println(tflOutputTensor->data.f[i], 6);
+       }
+       Serial.println();
+    // }
+    
+    // Determinar el movimiento con mayor probabilidad
+      int maxIndex = -1;
+      float maxScore = 0.0;
+
       for (int i = 0; i < NUM_MOVIMIENTOS; i++) {
-        Serial.print(MOVIMIENTOS[i]);
-        Serial.print(": ");
-        Serial.println(tflOutputTensor->data.f[i], 6);
+        float score = tflOutputTensor->data.f[i];
+        if (score > maxScore) {
+          maxScore = score;
+          maxIndex = i;
+        }
       }
-      Serial.println();
+
+      // Mostrar el movimiento con mayor probabilidad si supera el umbral
+      if (maxScore > 0.5 && maxIndex >= 0) {
+        Serial.print("Movimiento detectado: ");
+        Serial.println(MOVIMIENTOS[maxIndex]);
+      } else {
+        Serial.println("No se detectó un movimiento claro.");
+      }
     }
   }
 
