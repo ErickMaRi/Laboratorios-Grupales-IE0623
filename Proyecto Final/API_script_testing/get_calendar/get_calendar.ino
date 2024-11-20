@@ -1,127 +1,117 @@
-#include <WiFiEspClient.h>
-#include <WiFiEsp.h>
-#include "SoftwareSerial.h"
+#include <ESP8266WiFi.h>
 #include <ThingsBoard.h>
-#include <Base64.h>
-#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
+#include <Base64.h>  // Include the Base64 library
 
 #define WIFI_AP "Mey"
 #define WIFI_PASSWORD "Alvarado19"
-
 #define TOKEN "06hyrjcbtwq2n5lrxzsv"
-char thingsboardServer[] = "https://iot.eie.ucr.ac.cr/";
+#define THINGSBOARD_HOST "https://iot.eie.ucr.ac.cr/"
 
-WiFiEspClient espClient;
-PubSubClient mqttClient(espClient);
-ThingsBoard tb(mqttClient);  // Use PubSubClient with ThingsBoard
-
-SoftwareSerial soft(2, 3); // RX, TX
+// Setup ThingsBoard client and WiFi
+WiFiClient wifiClient;
+ThingsBoard tb(wifiClient);
 
 int status = WL_IDLE_STATUS;
-unsigned long lastSend;
-
+unsigned long lastFetchTime = 0;
+const long fetchInterval = 60000; // Fetch data every 60 seconds 
 void setup() {
-  // initialize serial for debugging
   Serial.begin(9600);
-  InitWiFi();
-  lastSend = 0;
+  delay(10);
+  initWiFi();
+  lastFetchTime = millis();
 }
 
 void loop() {
-  status = WiFi.status();
-  if (status != WL_CONNECTED) {
-    while (status != WL_CONNECTED) {
-      Serial.print("Attempting to connect to WPA SSID: ");
-      Serial.println(WIFI_AP);
-      // Connect to WPA/WPA2 network
-      status = WiFi.begin(WIFI_AP, WIFI_PASSWORD);
-      delay(500);
-    }
-    Serial.println("Connected to AP");
+  // Check if we need to fetch data from ThingsBoard
+  if (millis() - lastFetchTime > fetchInterval) {
+    fetchFileFromThingsBoard();
+    lastFetchTime = millis();
   }
 
-  if (!tb.connected()) {
-    reconnect();
-  }
-
-  getCalendarData();
-
-  tb.loop();
+  tb.loop();  // Keep ThingsBoard communication active
 }
 
-void getCalendarData() {
-  if (tb.connected()) {
-    String jsonData = tb.receiveTelemetry();
-    if (jsonData.length() > 0) {
-      Serial.println("Received telemetry data:");
-      Serial.println(jsonData);
+void initWiFi() {
+  Serial.println("Connecting to WiFi...");
+  WiFi.begin(WIFI_AP, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
+}
 
-      // Assuming the base64 data is in the "file" key, let's extract and decode it
-      int startIndex = jsonData.indexOf("\"file\":\"") + 8;  // Start after the "file":" part
-      int endIndex = jsonData.indexOf("\"", startIndex);  // Find the closing quote
+void fetchFileFromThingsBoard() {
+  if (WiFi.status() != WL_CONNECTED) {
+    reconnectToThingsBoard();
+  }
 
-      if (startIndex != -1 && endIndex != -1) {
-        String base64File = jsonData.substring(startIndex, endIndex);  // Extract the base64 string
+  HTTPClient http;
+  String url = String("http://") + THINGSBOARD_HOST + "/api/v1/" + TOKEN + "/telemetry";
 
-        Serial.println("Decoding base64 data...");
-        
-        // Base64 decoding
-        int decodedLength = base64_decoded_length(base64File.c_str());  // Calculate decoded data length
-        byte decodedData[decodedLength];  // Create a buffer to hold the decoded data
+  http.begin(url);  // HTTP request to ThingsBoard
+  int httpCode = http.GET();  // Send GET request
 
-        int result = base64_decode(decodedData, base64File.c_str(), base64File.length());  // Decode the base64
+  if (httpCode == HTTP_CODE_OK) {
+    String jsonData = http.getString();  // Get the response body
+    Serial.println("Data received from ThingsBoard:");
 
-        if (result == decodedLength) {
-          Serial.println("Base64 decoding successful.");
-          
-          // Process the decoded CSV data here (for example, print it)
-          String decodedStr = String((char*)decodedData);
-          Serial.println("Decoded CSV Data:");
-          Serial.println(decodedStr);
-        } else {
-          Serial.println("Error decoding base64 data.");
-        }
-      } else {
-        Serial.println("No file found in telemetry.");
-      }
+    // Parse the JSON response to get base64-encoded file
+    DynamicJsonDocument doc(1024);
+    DeserializationError error = deserializeJson(doc, jsonData);
+    
+    if (error) {
+      Serial.print("Error parsing JSON: ");
+      Serial.println(error.c_str());
+      return;
+    }
+
+    // Check if the file is in the response
+    if (doc.containsKey("file")) {
+      String base64File = doc["file"].as<String>();
+      decodeAndProcessCSV(base64File);
     } else {
-      Serial.println("No new data.");
+      Serial.println("No file found in the response.");
     }
   } else {
-    Serial.println("Not connected to ThingsBoard.");
+    Serial.print("Failed to fetch data. HTTP error code: ");
+    Serial.println(httpCode);
   }
+
+  http.end();  // Close HTTP connection
 }
 
-void InitWiFi() {
-  // initialize serial for ESP module
-  soft.begin(9600);
-  // initialize ESP module
-  WiFi.init(&soft);
-  // check for the presence of the shield
-  if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("WiFi shield not present");
-    while (true);
-  }
-
-  Serial.println("Connecting to AP ...");
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(WIFI_AP);
-    status = WiFi.begin(WIFI_AP, WIFI_PASSWORD);
+void reconnectToThingsBoard() {
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Connecting to WiFi...");
     delay(500);
   }
-  Serial.println("Connected to AP");
+  Serial.println("Connected to WiFi");
 }
 
-void reconnect() {
-  while (!tb.connected()) {
-    Serial.print("Connecting to ThingsBoard node ...");
-    if (tb.connect(thingsboardServer, TOKEN)) {
-      Serial.println("[DONE]");
-    } else {
-      Serial.print("[FAILED]");
-      Serial.println(" : retrying in 5 seconds");
-      delay(5000);
-    }
+void decodeAndProcessCSV(String base64File) {
+  // Create a mutable char array for the base64-encoded string
+  char base64CharArray[base64File.length() + 1];  // +1 for the null terminator
+  base64File.toCharArray(base64CharArray, sizeof(base64CharArray));
+
+  // Get the decoded length
+  int decodedLength = Base64.decode(NULL, base64CharArray, base64File.length());
+
+  // Allocate memory for decoded data
+  char* decodedData = new char[decodedLength + 1];  // +1 for the null terminator
+
+  // Perform the decoding
+  Base64.decode(decodedData, base64CharArray, base64File.length());
+
+  // Now, decodedData contains the CSV file (as char[])
+  Serial.println("Decoded CSV content:");
+  for (int i = 0; i < decodedLength; i++) {
+    Serial.write(decodedData[i]);
   }
+  Serial.println();  // Line break for clarity
+
+  // Clean up
+  delete[] decodedData;
 }
