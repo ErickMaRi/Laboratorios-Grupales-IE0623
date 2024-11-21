@@ -1,0 +1,1 @@
+Para tomar datos es necesario cargar el .ino en el Nano 33 BLE Lite y ejecutar el .py, se toman los últimos tres segundos con enter en la consola desde donde se ejecutó python.
