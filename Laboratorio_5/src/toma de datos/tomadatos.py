@@ -74,7 +74,7 @@ def save_to_csv():
         except Exception as e:
             print(f"\nError al guardar CSV: {e}")
 
-# Función para leer datos del serial, con ella llenamos el buffer.
+# Leer datos del serial, para llenar el buffer.
 def read_serial():
     global running, ser
     while running:
@@ -82,10 +82,9 @@ def read_serial():
             if not ser.is_open:
                 ser.open()
                 print("Puerto serial abierto.")
-                time.sleep(2)  # Espera a que el Arduino se reinicie
+                time.sleep(2)  # Esperamos a que el Arduino se reinicie
             line = ser.readline().decode('utf-8').strip()
             if line:
-                # Aquí podrías manejar otros mensajes de depuración si lo deseas
                 try:
                     ax, ay, az = map(float, line.split(","))
                     with data_lock:

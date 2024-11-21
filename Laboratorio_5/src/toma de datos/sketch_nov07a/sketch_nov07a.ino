@@ -32,7 +32,7 @@ void loop() {
     Serial.println(az);
   }
 
-  // Lectura del botón con debounce (opcional, ya que no enviaremos "SAVE")
+  // Ya no leemos con el botón del arduino
   int reading = digitalRead(buttonPin);
   if (reading != lastButtonState) {
     lastDebounceTime = millis();
@@ -40,10 +40,9 @@ void loop() {
 
   if ((millis() - lastDebounceTime) > debounceDelay) {
     if (reading == LOW && lastButtonState == HIGH && !saveRequested) {
-      // Aquí podrías implementar otra funcionalidad si lo deseas
-      // Por ahora, no enviamos "SAVE"
+
       saveRequested = true;
-      Serial.println("Botón presionado");  // Opcional: Mensaje para depuración
+      Serial.println("Botón presionado"); 
     }
     if (reading == HIGH && saveRequested) {
       saveRequested = false;

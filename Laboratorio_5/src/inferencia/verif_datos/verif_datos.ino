@@ -7,6 +7,7 @@
 
 const int sampleRate = 100;  // Frecuencia de muestreo en Hz
 const int numSamples = 119;  // Número de muestras necesarias para el modelo
+const int stride = 10;       // Desplazamiento de la ventana en cada inferencia
 
 // TensorFlow Lite
 tflite::AllOpsResolver tflOpsResolver;
@@ -15,17 +16,19 @@ tflite::MicroInterpreter* tflInterpreter = nullptr;
 TfLiteTensor* tflInputTensor = nullptr;
 TfLiteTensor* tflOutputTensor = nullptr;
 
-constexpr int tensorArenaSize = 8 * 1024;
+constexpr int tensorArenaSize = 16 * 1024; 
 byte tensorArena[tensorArenaSize] __attribute__((aligned(16)));
 
-// Mapear índices de salida a movimientos
+// Indices de salidas
 const char* MOVIMIENTOS[] = {"arriba", "jalar", "reves"};
 #define NUM_MOVIMIENTOS (sizeof(MOVIMIENTOS) / sizeof(MOVIMIENTOS[0]))
 
 float inputBuffer[numSamples * 3]; // Buffer para almacenar datos de entrada
 int sampleIndex = 0;
 
-unsigned long previousMicros = 0; // Para control de tiempo
+// Buffer circular para inferencia deslizante
+float slidingBuffer[numSamples * 3];
+int slidingIndex = 0;
 
 // Variables para almacenar las últimas salidas del modelo
 float latest_prob1 = 0.0;
@@ -34,22 +37,23 @@ float latest_prob3 = 0.0;
 const char* latest_movementLabel = "none";
 float latest_infer_time = 0.0;
 
+unsigned long previousMicros = 0; // Para el tiempo
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
 
-  // Inicializar IMU
+  // Inicializar la IMU
   if (!IMU.begin()) {
-    Serial.println("IMU inicializada.");
-    Serial.println("Error al inicializar la IMU!");
+    Serial.println("IMU initialization failed!");
     while (1);
   }
-  Serial.println("IMU inicializada.");
+  Serial.println("IMU initialized.");
 
   // Inicializar modelo TensorFlow Lite
   tflModel = tflite::GetModel(model);
   if (tflModel->version() != TFLITE_SCHEMA_VERSION) {
-    Serial.println("Error: versión del modelo incompatible.");
+    Serial.println("Model version does not match Schema.");
     while (1);
   }
 
@@ -58,7 +62,12 @@ void setup() {
   tflInputTensor = tflInterpreter->input(0);
   tflOutputTensor = tflInterpreter->output(0);
 
-  Serial.println("Modelo TensorFlow Lite cargado.");
+  Serial.println("TensorFlow Lite model loaded.");
+
+  // Inicializar el buffer deslizante con ceros
+  for (int i = 0; i < numSamples * 3; i++) {
+    slidingBuffer[i] = 0.0;
+  }
 }
 
 void loop() {
@@ -74,27 +83,33 @@ void loop() {
     if (IMU.accelerationAvailable()) {
       IMU.readAcceleration(ax, ay, az);
 
-      // Guardar datos en el buffer
+      // Guardar datos en el buffer principal
       inputBuffer[sampleIndex * 3 + 0] = ax;
       inputBuffer[sampleIndex * 3 + 1] = ay;
       inputBuffer[sampleIndex * 3 + 2] = az;
       sampleIndex++;
 
-      // Si se llenó el buffer, realizar la clasificación
-      if (sampleIndex >= numSamples) {
-        sampleIndex = 0; // Reiniciar índice
+      // Guardar datos en el buffer deslizante
+      for (int i = 0; i < 3; i++) {
+        slidingBuffer[slidingIndex * 3 + i] = inputBuffer[sampleIndex * 3 + i - stride * 3 + i];
+      }
+      slidingIndex = (slidingIndex + stride) % (numSamples);
+
+      // Realizar inferencia cada 'stride' muestras
+      if (sampleIndex >= stride) {
+        sampleIndex = 0; // Reiniciar índice para el buffer principal
+
+        // Copiar datos del buffer deslizante a la entrada del modelo
+        for (int i = 0; i < numSamples * 3; i++) {
+          tflInputTensor->data.f[i] = (slidingBuffer[i] + 4.0) / 8.0; // Normalización
+        }
 
         // Medir el tiempo de inferencia
         unsigned long startTime = micros();
 
-        // Normalizar datos para el modelo
-        for (int i = 0; i < numSamples * 3; i++) {
-          tflInputTensor->data.f[i] = (inputBuffer[i] + 4.0) / 8.0;
-        }
-
         // Invocar el modelo
         if (tflInterpreter->Invoke() != kTfLiteOk) {
-          Serial.println("Error al invocar el modelo.");
+          Serial.println("Error invoking the model.");
           // No usar 'return' para evitar detener el loop
         }
 
@@ -123,29 +138,28 @@ void loop() {
 
         // Determinar si se pudo mantener 100 Hz
         bool maintainRate = latest_infer_time <= (1000.0 / sampleRate); // 10 ms para 100 Hz
-        if (!maintainRate) {
-          // Si no se pudo mantener, infer_time se registró
+
+        // Enviar los datos del acelerómetro junto con las últimas salidas del modelo
+        Serial.print(ax, 4);
+        Serial.print(",");
+        Serial.print(ay, 4);
+        Serial.print(",");
+        Serial.print(az, 4);
+        Serial.print(",");
+        Serial.print(latest_prob1, 4);
+        Serial.print(",");
+        Serial.print(latest_prob2, 4);
+        Serial.print(",");
+        Serial.print(latest_prob3, 4);
+        Serial.print(",");
+        Serial.print(latest_movementLabel);
+        Serial.print(",");
+        if (maintainRate) {
+          Serial.println("0.000");
+        } else {
+          Serial.println(String(latest_infer_time, 3).c_str());
         }
       }
-
-      // Enviar los datos del acelerómetro junto con las últimas salidas del modelo
-      // Esto asegura que los datos se envíen a 100 Hz
-      // Incluso si el modelo no ha sido invocado recientemente, se envían las últimas salidas disponibles
-      Serial.print(ax, 4);
-      Serial.print(",");
-      Serial.print(ay, 4);
-      Serial.print(",");
-      Serial.print(az, 4);
-      Serial.print(",");
-      Serial.print(latest_prob1, 4);
-      Serial.print(",");
-      Serial.print(latest_prob2, 4);
-      Serial.print(",");
-      Serial.print(latest_prob3, 4);
-      Serial.print(",");
-      Serial.print(latest_movementLabel);
-      Serial.print(",");
-      Serial.println((latest_infer_time <= (1000.0 / sampleRate)) ? "0.000" : String(latest_infer_time, 3).c_str());
     }
   }
 }

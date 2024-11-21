@@ -139,7 +139,7 @@ def read_serial():
                 time.sleep(2)  # Espera a que el Arduino se reinicie
             line = ser.readline().decode('utf-8').strip()
             if line:
-                # Espera líneas en formato "ax,ay,az,prob1,prob2,prob3,movimientoLabel,infer_time"
+                # Esperamos líneas en formato "ax,ay,az,prob1,prob2,prob3,movimientoLabel,infer_time"
                 parts = line.split(",")
                 if len(parts) == 8:
                     try:
