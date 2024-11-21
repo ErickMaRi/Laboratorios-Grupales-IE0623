@@ -8,12 +8,14 @@ import threading
 import time
 import sys
 
-# Configuración del puerto serial
-PORT = '/dev/ttyACM0'  # Reemplaza con tu puerto
+# El código produce un gráfico dinámico con la ventana de los tres ejes del acelerómetro
+
+# Definimos el puerto
+PORT = '/dev/ttyACM0'
 BAUDRATE = 115200
 TIMEOUT = 1
 
-# Parámetros
+# Constantes
 SAMPLE_RATE = 100  # Frecuencia de muestreo en Hz
 BUFFER_SIZE = SAMPLE_RATE * 1  # Buffer para 3 segundos de datos
 
@@ -25,7 +27,7 @@ az_data = deque([0.0]*BUFFER_SIZE, maxlen=BUFFER_SIZE)
 # Lock para manejar acceso concurrente al guardar datos
 data_lock = threading.Lock()
 
-# Configuración del gráfico
+# Se declaran los ejes
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
 ax1.set_title('Aceleración en X')
 ax2.set_title('Aceleración en Y')
@@ -72,7 +74,7 @@ def save_to_csv():
         except Exception as e:
             print(f"\nError al guardar CSV: {e}")
 
-# Función para leer datos del serial
+# Función para leer datos del serial, con ella llenamos el buffer.
 def read_serial():
     global running, ser
     while running:
@@ -102,7 +104,7 @@ def read_serial():
         except UnicodeDecodeError as e:
             print(f"UnicodeDecodeError: {e}")
 
-# Función para escuchar la entrada del usuario
+# Función para escuchar la entrada del usuario, con enter guardamos datos nuevos.
 def listen_for_input():
     while running:
         try:

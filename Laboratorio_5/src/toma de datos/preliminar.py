@@ -1,41 +1,41 @@
-# -*- coding: utf-8 -*-
 import os
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # Opcional en versiones recientes
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-# Definir la ruta base donde se encuentran las carpetas de datos
+# Guardamos en la carpeta datos
 BASE_PATH = './datos'
 
-# Obtener la lista de clases (subcarpetas dentro de 'datos')
+# Recorremos las carpetas contenidas en datos para determinar las clases
 clases = [d for d in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, d))]
 
-# Asignar un color distinto a cada clase
+# Creamos los colores
 colors = plt.cm.get_cmap('tab10', len(clases))
 
-# Crear un diccionario para almacenar los datos por clase
+# Instanciamos el diccionario vacío
 datos_por_clase = {clase: [] for clase in clases}
 
-# Recorrer cada clase y leer sus archivos CSV
+# Y por cada ítem de cada clase...
 for idx, clase in enumerate(clases):
     carpeta_clase = os.path.join(BASE_PATH, clase)
-    # Encontrar todos los archivos CSV en la carpeta actual
+
+    # Buscamos todos los .csv
     archivos_csv = glob.glob(os.path.join(carpeta_clase, '*.csv'))
     
     for archivo in archivos_csv:
         try:
-            # Leer el CSV, asumiendo que tiene columnas 'ax', 'ay', 'az'
+            # Vamos intentando abrir cada archivo
             df = pd.read_csv(archivo)
             if {'ax', 'ay', 'az'}.issubset(df.columns):
-                datos_por_clase[clase].append(df[['ax', 'ay', 'az']].values)
+                datos_por_clase[clase].append(df[['ax', 'ay', 'az']].values) # Leemos las entradas
             else:
                 print(f"Advertencia: {archivo} no contiene las columnas 'ax', 'ay', 'az'.")
         except Exception as e:
             print(f"Error al leer {archivo}: {e}")
 
-# Función para plotear una clase individual
+# Declaramos el plot por gesto
 def plot_clase(clase, datos, color):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -47,11 +47,11 @@ def plot_clase(clase, datos, color):
     ax.set_zlabel('Az')
     plt.show()
 
-# Plotear cada clase individualmente
+# Hacemos plot de cada clase.
 for idx, clase in enumerate(clases):
     plot_clase(clase, datos_por_clase[clase], colors(idx))
 
-# Plot combinado con todas las clases
+# 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
@@ -69,7 +69,7 @@ ax.set_xlabel('Ax')
 ax.set_ylabel('Ay')
 ax.set_zlabel('Az')
 
-# Crear una leyenda sin duplicados
+# Imprimimos todos los gestos agregados.
 handles, labels = ax.get_legend_handles_labels()
 unique = {}
 for h, l in zip(handles, labels):
