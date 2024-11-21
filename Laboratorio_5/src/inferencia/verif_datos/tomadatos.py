@@ -8,6 +8,8 @@ import threading
 import time
 import sys
 
+# Produce una salida en tiempo real al usuario con los datos del acelerómetro y la salida de la red.
+
 # Definimos el puerto
 PORT = '/dev/ttyACM0'  # Ajusta este valor según tu sistema (e.g., 'COM3' en Windows)
 BAUDRATE = 115200
@@ -215,7 +217,7 @@ ani = animation.FuncAnimation(
     fig, 
     update_plot, 
     init_func=init, 
-    blit=False,  # Cambiado a False para mayor compatibilidad
+    blit=False,  
     interval=1000/SAMPLE_RATE,
     save_count=BUFFER_SIZE  # Limita el almacenamiento en caché
 )
