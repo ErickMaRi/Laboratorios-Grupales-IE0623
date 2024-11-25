@@ -3,7 +3,6 @@ import csv
 import os.path
 import requests
 import json
-import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -11,42 +10,45 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# Define the scope
+# Definir el alcance
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-# ThingsBoard configuration
+# Configuración de ThingsBoard
 THINGSBOARD_HOST = 'https://iot.eie.ucr.ac.cr/'
-ACCESS_TOKEN = '06hyrjcbtwq2n5lrxzsv'
-url = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
+ACCESS_TOKEN = '3803hSuCGv298cVRIrgX'
+url = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/attributes"
 headers = {'Content-Type': 'application/json'}
 
 
-def encode_csv_to_base64(csv_file_path):
-    with open(csv_file_path, "rb") as file:
-        return base64.b64encode(file.read()).decode("utf-8")
+def leer_contenido_csv(ruta_archivo_csv):
+    """Leer todo el contenido del archivo CSV como una cadena de texto."""
+    with open(ruta_archivo_csv, "r") as archivo:
+        return archivo.read()
 
-def enviar_datos_thingsboard(telemetria):
+
+def enviar_datos_a_thingsboard(atributos):
     try:
-        response = requests.post(url, data=json.dumps(telemetria), headers=headers)
+        response = requests.post(url, data=json.dumps(atributos), headers=headers)
         if response.status_code == 200:
-            print("Data sent successfully to ThingsBoard")
+            print("Datos enviados correctamente a ThingsBoard (atributos)")
         else:
-            print(f"Error sending data: {response.status_code} {response.text}")
+            print(f"Error al enviar los datos: {response.status_code} {response.text}")
     except Exception as e:
-        print(f"Exception sending data: {e}")
+        print(f"Excepción al enviar los datos: {e}")
 
-def send_calendar_data_to_thingsboard(csv_file_path):
-    # Encode the CSV file as a base64 string
-    encoded_csv = encode_csv_to_base64(csv_file_path)
-    telemetry_data = {
-        "file": encoded_csv,  # Send as "file" in ThingsBoard
-        "filename": "next_24_hours_meetings.csv"
+
+def enviar_datos_del_calendario_a_thingsboard(ruta_archivo_csv):
+    # Leer el contenido del archivo CSV
+    contenido_csv = leer_contenido_csv(ruta_archivo_csv)
+    atributos_datos = {
+        "file_content": contenido_csv  # Solo almacenar el contenido del CSV
     }
-    enviar_datos_thingsboard(telemetry_data)
+    enviar_datos_a_thingsboard(atributos_datos)
+
 
 def main():
-    """Retrieve meetings from Google Calendar starting now and for the next 24 hours, saving them in a CSV file."""
+    """Obtener las reuniones del Google Calendar comenzando desde ahora y para las siguientes 24 horas, guardándolas en un archivo CSV."""
     creds = None
-    # Check for existing credentials
+    # Comprobar si existen credenciales guardadas
     if os.path.exists("token.json"):
         creds = Credentials.from_authorized_user_file("token.json", SCOPES)
     if not creds or not creds.valid:
@@ -61,58 +63,59 @@ def main():
     try:
         service = build("calendar", "v3", credentials=creds)
 
-        # Set time range for the next 24 hours
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        end_time = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).isoformat()
+        # Establecer el rango de tiempo para las siguientes 24 horas
+        ahora = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        tiempo_final = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).isoformat()
 
-        print("Getting meetings for the next 24 hours")
+        print("Obteniendo reuniones para las siguientes 24 horas")
         events_result = (
             service.events()
             .list(
                 calendarId="primary",
-                timeMin=now,       # Start from the current time
-                timeMax=end_time,  # End 24 hours from now
+                timeMin=ahora,       # Empezar desde el tiempo actual
+                timeMax=tiempo_final,  # Terminar 24 horas después
                 singleEvents=True,
                 orderBy="startTime",
             )
             .execute()
         )
-        events = events_result.get("items", [])
+        eventos = events_result.get("items", [])
 
-        if not events:
-            print("No meetings found for the next 24 hours.")
+        if not eventos:
+            print("No se encontraron reuniones para las siguientes 24 horas.")
             return
 
-        # Write the events to a CSV file
-        with open("next_24_hours_meetings.csv", "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(["Start", "End", "Summary", "Description", "Location", "Attendees"])  # Header row
+        # Escribir los eventos en un archivo CSV
+        with open("next_24_hours_meetings.csv", "w", newline="") as archivo:
+            escritor = csv.writer(archivo)
+            escritor.writerow(["Inicio", "Fin", "Resumen", "Descripción", "Ubicación", "Asistentes"])  # Fila de cabecera
 
-            # Filter out events that have already ended
-            for event in events:
-                start = event["start"].get("dateTime", event["start"].get("date"))
-                end = event["end"].get("dateTime", event["end"].get("date"))
+            # Filtrar los eventos que ya han terminado
+            for evento in eventos:
+                inicio = evento["start"].get("dateTime", evento["start"].get("date"))
+                fin = evento["end"].get("dateTime", evento["end"].get("date"))
 
-                # Skip events that have already ended
-                if end <= now:
+                # Saltar eventos que ya han terminado
+                if fin <= ahora:
                     continue
 
-                summary = event.get("summary", "No Title")
-                description = event.get("description", "No Description")
-                location = event.get("location", "No Location")
-                attendees = ", ".join(
-                    [attendee["email"] for attendee in event.get("attendees", []) if "email" in attendee]
-                ) or "No Attendees"
+                resumen = evento.get("summary", "Sin título")
+                descripcion = evento.get("description", "Sin descripción")
+                ubicacion = evento.get("location", "Sin ubicación")
+                asistentes = ", ".join(
+                    [asistente["email"] for asistente in evento.get("attendees", []) if "email" in asistente]
+                ) or "Sin asistentes"
 
-                writer.writerow([start, end, summary, description, location, attendees])
+                escritor.writerow([inicio, fin, resumen, descripcion, ubicacion, asistentes])
 
-        print("next_24_hours_meetings.csv created")
-        csv_file_path = "next_24_hours_meetings.csv"
-        send_calendar_data_to_thingsboard(csv_file_path)
+        print("Archivo next_24_hours_meetings.csv creado")
+        ruta_archivo_csv = "next_24_hours_meetings.csv"
+        enviar_datos_del_calendario_a_thingsboard(ruta_archivo_csv)
 
 
     except HttpError as error:
-        print(f"An error occurred: {error}")
+        print(f"Ocurrió un error: {error}")
+
 
 if __name__ == "__main__":
     main()
