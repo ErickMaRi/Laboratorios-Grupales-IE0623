@@ -1,3 +1,4 @@
-Start,End,Summary,Description,Location,Attendees
-2024-11-26T08:00:00-06:00,2024-11-26T09:00:00-06:00,Clase A,No Description,No Location,No Attendees
-2024-11-26T10:00:00-06:00,2024-11-26T12:00:00-06:00,Evento B,No Description,No Location,No Attendees
+Inicio,Fin,Resumen,Descripción,Ubicación,Asistentes
+2024-11-26T08:00:00-06:00,2024-11-26T09:00:00-06:00,Clase A,Sin descripción,Sin ubicación,Sin asistentes
+2024-11-26T10:00:00-06:00,2024-11-26T12:00:00-06:00,Evento B,Sin descripción,Sin ubicación,Sin asistentes
+2024-11-26T16:45:00-06:00,2024-11-26T17:45:00-06:00,Evento con muchas letras para probar el manejo de las lineas largas.,Sin descripción,Sin ubicación,Sin asistentes
