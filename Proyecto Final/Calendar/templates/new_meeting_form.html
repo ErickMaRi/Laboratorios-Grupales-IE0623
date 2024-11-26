@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create nueva reunión</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;  /* Max width for the form */
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box; 
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 5px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .message {
+            text-align: center;
+            color: green;
+        }
+
+        /* Ensure inputs and buttons don't touch the container edge */
+        .form-group input[type="text"],
+        .form-group input[type="datetime-local"],
+        .form-group textarea {
+            margin-right: 0;  /* Reset margin to avoid overflow */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Crear nueva reunión</h1>
+    <form action="/Prod/create_meeting" method="POST">
+        <div class="form-group">
+            <label for="start">Fecha y hora de inicio:</label>
+            <input type="datetime-local" id="start" name="start" required>
+        </div>
+
+        <div class="form-group">
+            <label for="end">Fecha y hora de finalización:</label>
+            <input type="datetime-local" id="end" name="end" required>
+        </div>
+
+        <div class="form-group">
+            <label for="summary">Resumen:</label>
+            <input type="text" id="summary" name="summary" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Descripción:</label>
+            <textarea id="description" name="description" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" required>
+        </div>
+
+        <div class="form-group">
+            <label for="attendees">Asistentes (correos separados por comas):</label>
+            <input type="text" id="attendees" name="attendees">
+        </div>
+
+        <div class="form-group">
+            <input type="submit" value="Create Meeting">
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

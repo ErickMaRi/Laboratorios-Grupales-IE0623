@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  FastAPIApp:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: main.handler  # points to 'handler' in main.py
+      Runtime: python3.8
+      MemorySize: 128
+      Timeout: 5
+      Events:
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
