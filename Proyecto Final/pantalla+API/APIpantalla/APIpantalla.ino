@@ -190,7 +190,7 @@ void setup() {
 
   // Inicializa la pantalla
   tft.initR(INITR_BLACKTAB);  // Inicializar la pantalla con la configuración Black Tab
-  tft.setRotation(1); // Ajustar la rotación si es necesario
+  tft.setRotation(1);
 
   // Prueba de pantalla
   tft.fillScreen(ST7735_RED);
