@@ -7,7 +7,7 @@ const char* ssid = "Apartamento JM";
 const char* password = "JMQVLDFM.07"; 
 
 // ThingsBoard Configuration
-const String accessToken = "3803hSuCGv298cVRIrgX"; // Device access token
+const String accessToken = "52DSeWqWFQaWsEJ7W5uK"; // Device access token
 const String serverUrl = "https://iot.eie.ucr.ac.cr/api/v1/" + accessToken + "/attributes"; // endpoint
 
 WiFiClientSecure client; // Cliente seguro para HTTPS

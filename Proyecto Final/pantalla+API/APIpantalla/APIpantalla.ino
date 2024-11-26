@@ -11,8 +11,8 @@ const char* ssid = "Apartamento JM";
 const char* password = "JMQVLDFM.07"; 
 
 // Configuración de ThingsBoard
-const String accessToken = "3803hSuCGv298cVRIrgX"; // Token de acceso del dispositivo
-const String serverUrl = "https://iot.eie.ucr.ac.cr/api/v1/" + accessToken + "/attributes"; // Endpoint
+// const String accessToken = "52DSeWqWFQaWsEJ7W5uK"; // Token de acceso del dispositivo
+const String serverUrl = "https://bq19t3sb3d.execute-api.us-east-2.amazonaws.com/Prod/get_calendar_data"; // Endpoint
 
 // Configuración de la pantalla TFT
 #define TFT_CS     D3   

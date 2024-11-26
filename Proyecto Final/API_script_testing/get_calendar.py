@@ -11,7 +11,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # Definir el alcance
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 # Configuración de ThingsBoard
 THINGSBOARD_HOST = 'https://iot.eie.ucr.ac.cr/'
 ACCESS_TOKEN = '3803hSuCGv298cVRIrgX'
@@ -62,6 +62,21 @@ def main():
 
     try:
         service = build("calendar", "v3", credentials=creds)
+        print("Google Calendar service successfully built.")
+
+        # Check if the service is valid
+        if not service:
+            print("Failed to build the Google Calendar service.")
+            return None
+
+        calendar_list = service.calendarList().list().execute()
+        print("Successfully fetched calendar list:")
+        for calendar in calendar_list.get('items', []):
+            print(f"Calendar: {calendar['summary']}")
+        calendar_metadata = service.calendars().get(calendarId="primary").execute()
+
+
+        print(f"Successfully retrieved calendar metadata: {calendar_metadata}")
 
         # Establecer el rango de tiempo para las siguientes 24 horas
         ahora = datetime.datetime.now(datetime.timezone.utc).isoformat()
