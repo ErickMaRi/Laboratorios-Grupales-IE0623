@@ -15,9 +15,9 @@ const String accessToken = "3803hSuCGv298cVRIrgX"; // Token de acceso del dispos
 const String serverUrl = "https://iot.eie.ucr.ac.cr/api/v1/" + accessToken + "/attributes"; // Endpoint
 
 // Configuración de la pantalla TFT
-#define TFT_CS     D8   // GPIO15
-#define TFT_DC     D2   // GPIO4
-#define TFT_RST    D1   // GPIO5
+#define TFT_CS     D3   
+#define TFT_DC     D2   
+#define TFT_RST    D4   
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
@@ -188,27 +188,47 @@ int indiceEvento = 0;
 void setup() {
   Serial.begin(115200);
 
-  // Inicializar la pantalla
+  // Inicializa la pantalla
   tft.initR(INITR_BLACKTAB);  // Inicializar la pantalla con la configuración Black Tab
   tft.setRotation(1); // Ajustar la rotación si es necesario
+
+  // Prueba de pantalla
+  tft.fillScreen(ST7735_RED);
+  delay(500);
+  tft.fillScreen(ST7735_GREEN);
+  delay(500);
+  tft.fillScreen(ST7735_BLUE);
+  delay(500);
+  tft.fillScreen(ST7735_BLACK);
+  tft.setTextColor(ST7735_WHITE);
+  tft.setTextSize(1);
+  tft.setCursor(0, 0);
+  tft.println("Inicializando...");
 
   // Configuración de WiFi
   WiFi.begin(ssid, password);
   Serial.println("Conectando a WiFi...");
-  while (WiFi.status() != WL_CONNECTED) {
+  tft.println("Conectando a WiFi...");
+  int wifiRetryCount = 0;
+  while (WiFi.status() != WL_CONNECTED && wifiRetryCount < 10) { // Intentar durante 10 segundos
     delay(1000);
     Serial.print(".");
+    tft.print(".");
+    wifiRetryCount++;
   }
-  Serial.println("\nConectado a WiFi");
-
-  // Configuración del cliente HTTPS
-  WiFiClientSecure client; // Cliente seguro para HTTPS
-  client.setInsecure(); // Ignorar la verificación de certificados SSL
 
   if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nConectado a WiFi");
+    tft.println("\nWiFi Conectado");
+
+    // Configuración del cliente HTTPS
+    WiFiClientSecure client; // Cliente seguro para HTTPS
+    client.setInsecure(); // Ignorar la verificación de certificados SSL
+
     HTTPClient https;
 
     Serial.println("Iniciando solicitud GET...");
+    tft.println("Solicitando datos...");
     https.begin(client, serverUrl); // Configurar la URL del servidor con WiFiClientSecure para HTTPS
     int httpResponseCode = https.GET(); // Realiza la solicitud GET
 
@@ -217,6 +237,7 @@ void setup() {
       String payload = https.getString();
       Serial.println("Respuesta del servidor:");
       Serial.println(payload);
+      tft.println("Datos recibidos");
 
       // Analizar la respuesta JSON
       StaticJsonDocument<2048> doc;
@@ -225,6 +246,7 @@ void setup() {
       if (error) {
         Serial.print(F("deserializeJson() falló: "));
         Serial.println(error.f_str());
+        tft.println("Error JSON");
         return;
       }
 
@@ -232,6 +254,7 @@ void setup() {
       const char* fileContent = doc["client"]["file_content"];
       if (fileContent == NULL) {
         Serial.println("No se encontró 'file_content' en la respuesta JSON.");
+        tft.println("Sin datos");
         return;
       }
 
@@ -284,26 +307,35 @@ void setup() {
         // Obtiene la siguiente línea
         line = strtok(NULL, "\n");
       }
+
     } else {
       // Si hay un error en la solicitud
       Serial.print("Error en la solicitud GET. Código: ");
       Serial.println(httpResponseCode);
+      tft.print("Error GET: ");
+      tft.println(httpResponseCode);
+      return;
     }
 
     https.end(); // Cerrar la conexión
+
   } else {
-    Serial.println("No hay conexión WiFi");
+    Serial.println("\nNo se pudo conectar a WiFi");
+    tft.println("\nError WiFi");
+    return;
   }
 
   if (numEventos > 0) {
-    // Cargar y muestra el primer evento si lo hay
+    // Cargar y mostrar el primer evento si lo hay
     eventoActual.cargarEvento(indiceEvento);
     eventoActual.dibujarEstaticos();
     eventoActual.dibujarDescripcion();
   } else {
     Serial.println("No hay eventos para mostrar.");
+    tft.println("Sin eventos");
   }
 }
+
 
 void loop() {
   static unsigned long lastScrollUpdate = 0;
