@@ -240,7 +240,7 @@ void setup() {
       tft.println("Datos recibidos");
 
       // Analizar la respuesta JSON
-      StaticJsonDocument<2048> doc;
+      DynamicJsonDocument doc(2048);
       DeserializationError error = deserializeJson(doc, payload);
 
       if (error) {
@@ -259,15 +259,19 @@ void setup() {
       }
 
       // Procesar los datos CSV
-      char csvData[2048]; // Ajustar el tamaño según sea necesario
+      char csvData[512]; // Se ajusta a un tamaño más pequeño
       strncpy(csvData, fileContent, sizeof(csvData) - 1);
       csvData[sizeof(csvData) - 1] = '\0';
 
       char* line = strtok(csvData, "\n"); // Obtener la primera línea (encabezado)
+      Serial.println("Encabezado CSV:");
+      Serial.println(line);
 
       line = strtok(NULL, "\n"); // Obtener la primera línea de datos
 
       while (line != NULL && numEventos < MAX_EVENTS) {
+        Serial.print("Procesando línea: ");
+        Serial.println(line);
         // Analizar la línea
         // Dividir la línea por comas
         char* startStr = strtok(line, ",");
@@ -276,6 +280,11 @@ void setup() {
         char* descriptionStr = strtok(NULL, ",");
         char* locationStr = strtok(NULL, ",");
         char* attendeesStr = strtok(NULL, ",");
+
+        if (startStr == NULL || summaryStr == NULL) {
+          Serial.println("Datos incompletos en la línea CSV.");
+          break;
+        }
 
         // Extraer fecha y hora de startStr
         // Formato esperado: "YYYY-MM-DDTHH:MM:SS-06:00"
@@ -299,10 +308,15 @@ void setup() {
         strncpy(eventosData[numEventos].horaEvento, horaEvento, MAX_HORA_LEN - 1);
         eventosData[numEventos].horaEvento[MAX_HORA_LEN - 1] = '\0';
 
-        strncpy(eventosData[numEventos].descripcion, descriptionStr, MAX_DESCRIPCION_LEN - 1);
-        eventosData[numEventos].descripcion[MAX_DESCRIPCION_LEN - 1] = '\0';
+        if (descriptionStr != NULL) {
+          strncpy(eventosData[numEventos].descripcion, descriptionStr, MAX_DESCRIPCION_LEN - 1);
+          eventosData[numEventos].descripcion[MAX_DESCRIPCION_LEN - 1] = '\0';
+        } else {
+          eventosData[numEventos].descripcion[0] = '\0';
+        }
 
         numEventos++;
+        yield(); // Ceder tiempo al sistema operativo
 
         // Obtiene la siguiente línea
         line = strtok(NULL, "\n");
@@ -335,6 +349,7 @@ void setup() {
     tft.println("Sin eventos");
   }
 }
+
 
 
 void loop() {
