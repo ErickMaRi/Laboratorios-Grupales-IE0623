@@ -15,27 +15,22 @@ const char* password = "AM4781AL0313";
 // const String accessToken = "52DSeWqWFQaWsEJ7W5uK"; // Token de acceso del dispositivo LEGACY
 const String serverUrl = "https://bq19t3sb3d.execute-api.us-east-2.amazonaws.com/Prod/get_calendar_data"; // Endpoint
 
-// Configuración de la pantalla TFT
 #define TFT_CS     D3
 #define TFT_DC     D2
 #define TFT_RST    D4
 
-// SPI hardware pins (no es necesario definirlos)
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
-// Constantes para los tamaños
 #define MAX_NOMBRE_LEN 50
-#define MAX_FECHA_LEN 11       // Formato "YYYY-MM-DD"
-#define MAX_HORA_LEN 6         // Formato "HH:MM"
+#define MAX_FECHA_LEN 11
+#define MAX_HORA_LEN 6
 #define MAX_DESCRIPCION_LEN 200
 
-#define VENTANA_EVENTOS 5 // Número de eventos a mantener en memoria
+#define VENTANA_EVENTOS 5
 
-// Pines para los botones
-#define BUTTON_PREV_PIN     D1 // GPIO5
-#define BUTTON_NEXT_PIN     D6 // GPIO12
+#define BUTTON_PREV_PIN     D1
+#define BUTTON_NEXT_PIN     D6
 
-// Estructura para almacenar los datos de eventos
 struct EventoData {
   char nombreEvento[MAX_NOMBRE_LEN];
   char fechaEvento[MAX_FECHA_LEN];
@@ -43,19 +38,17 @@ struct EventoData {
   char descripcion[MAX_DESCRIPCION_LEN];
 };
 
-EventoData eventosData[VENTANA_EVENTOS]; // Ventana de eventos
-int numEventosEnVentana = 0; // Número actual de eventos en la ventana
-int indiceEventoEnVentana = 0; // Índice del evento actual en la ventana
-int indiceEventoGlobal = 0; // Índice global del evento
+EventoData eventosData[VENTANA_EVENTOS];
+int numEventosEnVentana = 0;
+int indiceEventoEnVentana = 0;
+int indiceEventoGlobal = 0;
 
 bool masEventosDisponibles = true;
-int totalEventosDisponibles = 0; // Variable para contar el total de eventos
+int totalEventosDisponibles = 0;
 
-// Variables globales para manejo de buffers
-char csvData[2048];  // Ajustar según el tamaño esperado del CSV
-char tempLine[256];  // Línea temporal para procesar cada línea del CSV
+char csvData[2048];
+char tempLine[256];
 
-// Clase Evento contiene la carga y visualización de eventos
 class Evento {
   public:
     char nombreEvento[MAX_NOMBRE_LEN];
@@ -171,14 +164,16 @@ class Evento {
     }
 };
 
-// Instancia del evento actual
 Evento eventoActual;
 
-// Variables para el manejo de los botones
 bool lastButtonPrevState = HIGH;
 bool lastButtonNextState = HIGH;
 
-// Configuración para NTP
+unsigned long buttonPrevPressTime = 0;
+unsigned long buttonNextPressTime = 0;
+
+const unsigned long HOLD_TIME_MS = 2000;
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", -21600, 60000);
 
@@ -186,6 +181,7 @@ void cargarEventos(int indiceInicio);
 int determinarEventoActual();
 void manejarBotones();
 void testInternetConnectivity();
+void anadirEvento();
 
 void setup() {
   Serial.begin(115200);
@@ -205,7 +201,6 @@ void setup() {
   tft.setCursor(0, 0);
   tft.println("Inicializando...");
 
-  // Configuración de los pines de los botones
   pinMode(BUTTON_PREV_PIN, INPUT_PULLUP);
   pinMode(BUTTON_NEXT_PIN, INPUT_PULLUP);
 
@@ -248,7 +243,6 @@ void setup() {
       Serial.println("Tiempo sincronizado:");
       Serial.println(timeClient.getFormattedTime());
 
-      // Mostrar hora en pantalla
       tft.fillScreen(ST7735_BLACK);
       tft.setCursor(0, 0);
       tft.setTextSize(2);
@@ -257,10 +251,8 @@ void setup() {
       tft.println(timeClient.getFormattedTime());
       delay(2000);
 
-      // Cargar eventos
       cargarEventos(indiceEventoGlobal);
 
-      // Mostrar cantidad de eventos encontrados
       Serial.print("Total de eventos disponibles: ");
       Serial.println(totalEventosDisponibles);
       tft.fillScreen(ST7735_BLACK);
@@ -310,22 +302,24 @@ void loop() {
 void manejarBotones() {
   bool buttonPrevState = digitalRead(BUTTON_PREV_PIN);
   bool buttonNextState = digitalRead(BUTTON_NEXT_PIN);
+  unsigned long currentTime = millis();
 
-  // Si ambos botones están presionados simultáneamente
-  if (buttonPrevState == LOW && buttonNextState == LOW) {
-    if (lastButtonPrevState == HIGH && lastButtonNextState == HIGH) {
-      Serial.println("Ambos botones presionados: Ir al evento actual");
+  // Botón Previo
+  if (buttonPrevState == LOW && lastButtonPrevState == HIGH) {
+    buttonPrevPressTime = currentTime;
+  }
+  if (buttonPrevState == HIGH && lastButtonPrevState == LOW) {
+    unsigned long pressDuration = currentTime - buttonPrevPressTime;
+    if (pressDuration >= HOLD_TIME_MS) {
+      Serial.println("Botón Previo mantenido: Ir al evento actual");
       indiceEventoGlobal = determinarEventoActual();
       cargarEventos(indiceEventoGlobal);
       indiceEventoEnVentana = 0;
       eventoActual.cargarEvento(eventosData[indiceEventoEnVentana]);
       eventoActual.dibujarEstaticos();
       eventoActual.dibujarDescripcion();
-    }
-  } else {
-    // Botón Evento Previo
-    if (buttonPrevState == LOW && lastButtonPrevState == HIGH) {
-      Serial.println("Botón Evento Previo presionado");
+    } else {
+      Serial.println("Botón Previo presionado");
       if (indiceEventoGlobal > 0) {
         indiceEventoGlobal--;
         indiceEventoEnVentana--;
@@ -343,10 +337,20 @@ void manejarBotones() {
         tft.println("Primer evento");
       }
     }
+  }
+  lastButtonPrevState = buttonPrevState;
 
-    // Botón Evento Siguiente
-    if (buttonNextState == LOW && lastButtonNextState == HIGH) {
-      Serial.println("Botón Evento Siguiente presionado");
+  // Botón Siguiente
+  if (buttonNextState == LOW && lastButtonNextState == HIGH) {
+    buttonNextPressTime = currentTime;
+  }
+  if (buttonNextState == HIGH && lastButtonNextState == LOW) {
+    unsigned long pressDuration = currentTime - buttonNextPressTime;
+    if (pressDuration >= HOLD_TIME_MS) {
+      Serial.println("Botón Siguiente mantenido: Añadir evento");
+      anadirEvento();
+    } else {
+      Serial.println("Botón Siguiente presionado");
       indiceEventoGlobal++;
       indiceEventoEnVentana++;
       if (indiceEventoEnVentana >= numEventosEnVentana) {
@@ -358,9 +362,11 @@ void manejarBotones() {
       eventoActual.dibujarDescripcion();
     }
   }
-
-  lastButtonPrevState = buttonPrevState;
   lastButtonNextState = buttonNextState;
+}
+
+void anadirEvento() {
+  // Método vacío
 }
 
 void cargarEventos(int indiceInicio) {
@@ -419,7 +425,7 @@ void cargarEventos(int indiceInicio) {
     char* line;
     char* ptr;
 
-    memset(csvData, 0, sizeof(csvData)); // Limpiar buffer
+    memset(csvData, 0, sizeof(csvData));
     fileContent.toCharArray(csvData, sizeof(csvData) - 1);
 
     line = strtok_r(csvData, "\n", &ptr);
@@ -428,26 +434,22 @@ void cargarEventos(int indiceInicio) {
 
     line = strtok_r(NULL, "\n", &ptr);
 
-    // Contar total de eventos disponibles
     while (line != NULL) {
       totalEventosDisponibles++;
       line = strtok_r(NULL, "\n", &ptr);
     }
 
-    // Reiniciar para procesar desde el inicio
     memset(csvData, 0, sizeof(csvData));
     fileContent.toCharArray(csvData, sizeof(csvData) - 1);
-    line = strtok_r(csvData, "\n", &ptr); // Saltar encabezado
+    line = strtok_r(csvData, "\n", &ptr);
     line = strtok_r(NULL, "\n", &ptr);
 
-    // Posicionar en el índice de inicio
     eventoIndex = 0;
     while (line != NULL && eventoIndex < indiceInicio) {
       line = strtok_r(NULL, "\n", &ptr);
       eventoIndex++;
     }
 
-    // Procesar eventos para cargar en la ventana
     while (line != NULL && eventosCargados < VENTANA_EVENTOS) {
       Serial.print("Procesando línea: ");
       Serial.println(line);
