@@ -8,12 +8,12 @@
 #include <WiFiUdp.h>
 
 // Credenciales WiFi
-const char* ssid = "Aparta AM";
-const char* password = "AM4781AL0313";
+const char* ssid = "Pangolin";
+const char* password = "Anchia.94";
 
-// Configuración de ThingsBoard
-// const String accessToken = "52DSeWqWFQaWsEJ7W5uK"; // Token de acceso del dispositivo LEGACY
+// Configuración de Endpoint
 const String serverUrl = "https://bq19t3sb3d.execute-api.us-east-2.amazonaws.com/Prod/get_calendar_data"; // Endpoint
+const String serverUrlnew = "https://bq19t3sb3d.execute-api.us-east-2.amazonaws.com/Prod/check_and_create_meeting"; // Endpoint
 
 #define TFT_CS     D3
 #define TFT_DC     D2
@@ -177,7 +177,7 @@ const unsigned long HOLD_TIME_MS = 2000;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "time.google.com", -21600, 60000);
 
-void cargarEventos(int indiceInicio);
+void cargarEventos(int indiceInicio, bool crearNuevo);
 int determinarEventoActual();
 void manejarBotones();
 void testInternetConnectivity();
@@ -251,7 +251,7 @@ void setup() {
       tft.println(timeClient.getFormattedTime());
       delay(2000);
 
-      cargarEventos(indiceEventoGlobal);
+      cargarEventos(indiceEventoGlobal, false);
 
       Serial.print("Total de eventos disponibles: ");
       Serial.println(totalEventosDisponibles);
@@ -313,7 +313,7 @@ void manejarBotones() {
     if (pressDuration >= HOLD_TIME_MS) {
       Serial.println("Botón Previo mantenido: Ir al evento actual");
       indiceEventoGlobal = determinarEventoActual();
-      cargarEventos(indiceEventoGlobal);
+      cargarEventos(indiceEventoGlobal, false);
       indiceEventoEnVentana = 0;
       eventoActual.cargarEvento(eventosData[indiceEventoEnVentana]);
       eventoActual.dibujarEstaticos();
@@ -326,7 +326,7 @@ void manejarBotones() {
         if (indiceEventoEnVentana < 0) {
           int nuevoIndiceInicio = indiceEventoGlobal - VENTANA_EVENTOS + 1;
           if (nuevoIndiceInicio < 0) nuevoIndiceInicio = 0;
-          cargarEventos(nuevoIndiceInicio);
+          cargarEventos(nuevoIndiceInicio, false);
           indiceEventoEnVentana = indiceEventoGlobal - nuevoIndiceInicio;
         }
         eventoActual.cargarEvento(eventosData[indiceEventoEnVentana]);
@@ -354,7 +354,7 @@ void manejarBotones() {
       indiceEventoGlobal++;
       indiceEventoEnVentana++;
       if (indiceEventoEnVentana >= numEventosEnVentana) {
-        cargarEventos(indiceEventoGlobal);
+        cargarEventos(indiceEventoGlobal, false);
         indiceEventoEnVentana = 0;
       }
       eventoActual.cargarEvento(eventosData[indiceEventoEnVentana]);
@@ -366,10 +366,16 @@ void manejarBotones() {
 }
 
 void anadirEvento() {
-  // Método vacío
+  Serial.println("Botón Siguiente mantenido: Reservar espacio");
+  indiceEventoGlobal = determinarEventoActual();
+  cargarEventos(indiceEventoGlobal, true);
+  indiceEventoEnVentana = 0;
+  eventoActual.cargarEvento(eventosData[indiceEventoEnVentana]);
+  eventoActual.dibujarEstaticos();
+  eventoActual.dibujarDescripcion();
 }
 
-void cargarEventos(int indiceInicio) {
+void cargarEventos(int indiceInicio, bool crearNuevo) {
   numEventosEnVentana = 0;
   indiceEventoEnVentana = 0;
 
@@ -380,7 +386,11 @@ void cargarEventos(int indiceInicio) {
 
   Serial.println("Solicitando datos...");
   tft.println("Solicitando datos...");
+  if (crearNuevo){
+  https.begin(client, serverUrlnew);
+  }else{
   https.begin(client, serverUrl);
+  }
   int httpResponseCode = https.GET();
 
   Serial.print("Código de respuesta HTTP: ");
