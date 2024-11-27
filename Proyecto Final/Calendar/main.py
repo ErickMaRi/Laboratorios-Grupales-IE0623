@@ -47,12 +47,7 @@ def get_credentials():
             print("Es necesario volver a autenticar.")
             return None
 
-        # Guardar las credenciales para el próximo inicio
-        with open(TOKEN_JSON_FILE, 'w') as token:
-            token.write(creds.to_json())
-
     return creds
-
 
 def obtener_eventos_y_enviar():
     creds = None
@@ -83,10 +78,6 @@ def obtener_eventos_y_enviar():
             print("No se puede refrescar el token, es necesario volver a autenticar.")
             return None
 
-        # Guardar las credenciales en token.json para su uso futuro
-        with open(TOKEN_JSON_FILE, 'w') as token:
-            token.write(creds.to_json())
-
     # Imprimir el objeto de credenciales cargado para verificar que es correcto
     print(f"Credenciales cargadas: {creds}")
     try:
@@ -101,6 +92,8 @@ def obtener_eventos_y_enviar():
         # Establecer el rango de tiempo para las siguientes 24 horas
         ahora = datetime.datetime.now(datetime.timezone.utc).isoformat()
         tiempo_final = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)).isoformat()
+        print("ahora", ahora)
+        print("tiempo_final", tiempo_final)
 
         events_result = (
             service.events()
@@ -127,10 +120,6 @@ def obtener_eventos_y_enviar():
         for evento in eventos:
             inicio = evento["start"].get("dateTime", evento["start"].get("date"))
             fin = evento["end"].get("dateTime", evento["end"].get("date"))
-
-            # Saltar eventos que ya han terminado
-            if fin <= ahora:
-                continue
 
             resumen = evento.get("summary", "Sin título")
             descripcion = evento.get("description", "Sin descripción")
@@ -260,8 +249,8 @@ async def check_and_create_meeting(request: Request):
         if not events:
             # Preparar los datos para la nueva reunión
             timezone = '-06:00'  # Ajustar según su zona horaria
-            start_time = now + datetime.timedelta(minutes=30)  # La nueva reunión comienza en 30 minutos
-            end_time = start_time + datetime.timedelta(hours=1)  # Reunión de 1 hora
+            start_time = now
+            end_time = start_time + datetime.timedelta(minutes=30)  # Reunión de 30 hora
 
             # Crear los datos del evento
             event_data = {
