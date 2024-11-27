@@ -175,7 +175,7 @@ unsigned long buttonNextPressTime = 0;
 const unsigned long HOLD_TIME_MS = 2000;
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", -21600, 60000);
+NTPClient timeClient(ntpUDP, "time.google.com", -21600, 60000);
 
 void cargarEventos(int indiceInicio);
 int determinarEventoActual();
