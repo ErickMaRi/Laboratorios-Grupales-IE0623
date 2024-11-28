@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reunión creada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .message {
+            text-align: center;
+            color: green;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .button-container {
+            text-align: center;
+        }
+        .back-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .back-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>¡Reunión creada de manera correcta!</h1>
+    <div class="message">
+        <p>Su reunión fue creada de manera correcta. Puede verla en Google Calendar.</p>
+        <p>ID del evento: {{ event_id }}</p>
+    </div>
+
+    <div class="button-container">
+        <a href="/Prod/new_meeting" class="back-button">Crear nueva reunión</a>
+    </div>
+</div>
+
+</body>
+</html>

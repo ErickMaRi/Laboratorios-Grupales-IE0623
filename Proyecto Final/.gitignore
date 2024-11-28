@@ -1,0 +1,5 @@
+API_script_testing/credentials.json
+API_script_testing/token.json
+env/
+__pycache__/
+*.pyc

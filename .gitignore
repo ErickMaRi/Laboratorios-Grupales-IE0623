@@ -1,2 +1,13 @@
+API_script_testing/credentials.json
+API_script_testing/token.json
+env/
+__pycache__/
+*.pyc
+*.zip
+Proyecto Final/Calendar/.aws-sam/
+Proyecto Final/Calendar/token.json
+Proyecto Final/Calendar/venv/
+Proyecto Final/Local_calendar/credentials.json
+Proyecto Final/Local_calendar/token.json
 Laboratorio_5/src/modelo/myenv
 Laboratorio_5/src/inferencia/verif_datos/venv
